@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# Environments and builds
+.venv/
+venv/
+dist/
+build/
+.artifacts-old-*/
+
+# Experiment output and local configuration
+runs/
+scaffoldscope-demo/
+.tmp-scaffoldscope-demo/
+*.local.json
+.env
+.env.*
+!.env.example
+!.env.sample
+*.key
+*.pem
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
