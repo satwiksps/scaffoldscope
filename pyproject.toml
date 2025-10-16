@@ -1,0 +1,102 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scaffoldscope"
+dynamic = ["version"]
+description = "Reproducible, paired ablations for coding-agent harnesses."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [
+  { name = "Satwik Sai Prakash Sahoo" },
+]
+maintainers = [
+  { name = "Satwik Sai Prakash Sahoo" },
+]
+keywords = [
+  "ai-agents",
+  "agent-harness",
+  "coding-agents",
+  "evaluation",
+  "swe-bench",
+  "context-management",
+  "ablation",
+  "reproducibility",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://scaffoldscope-azure.vercel.app"
+Documentation = "https://github.com/satwiksps/scaffoldscope/tree/v0.3.0/docs"
+Repository = "https://github.com/satwiksps/scaffoldscope"
+Issues = "https://github.com/satwiksps/scaffoldscope/issues"
+Changelog = "https://github.com/satwiksps/scaffoldscope/blob/v0.3.0/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2",
+  "mypy>=1.11",
+  "pre-commit>=4.0",
+  "pytest>=8.3",
+  "pytest-cov>=5.0",
+  "ruff>=0.7",
+  "twine>=6.1",
+]
+
+[project.scripts]
+scaffoldscope = "scaffoldscope.cli:main"
+
+[tool.hatch.version]
+path = "src/scaffoldscope/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scaffoldscope"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/site"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = ["src/scaffoldscope/demo/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/scaffoldscope/agent.py" = ["S101"]
+"src/scaffoldscope/models.py" = ["S310"]
+"src/scaffoldscope/runner.py" = ["S607"]
+"src/scaffoldscope/sandbox.py" = ["S101", "S603", "S607"]
+"src/scaffoldscope/schema.py" = ["S603", "S607"]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src/scaffoldscope"]
+exclude = '(^|[\\/])(demo[\\/]fixtures|starter_assets[\\/]workspaces)[\\/]'
