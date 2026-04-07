@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ScaffoldScope experiment",
+  "description": "A reproducible paired ablation over coding-agent scaffold treatments.",
+  "type": "object",
+  "required": ["schema_version", "experiment", "tasks", "model", "variants"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "experiment": {"$ref": "#/$defs/experiment"},
+    "tasks": {"$ref": "#/$defs/tasks"},
+    "model": {"$ref": "#/$defs/model"},
+    "agent": {"$ref": "#/$defs/agent"},
+    "sandbox": {"$ref": "#/$defs/sandbox"},
+    "variants": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/variant"}}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"},
+    "experiment": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"$ref": "#/$defs/identifier"},
+        "replicates": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807}},
+        "seeds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807}},
+        "max_workers": {"type": "integer", "minimum": 1},
+        "output_dir": {"type": "string", "minLength": 1},
+        "baseline": {"$ref": "#/$defs/identifier"},
+        "primary_comparison": {"type": ["string", "null"], "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"},
+        "randomize_variant_order": {"type": "boolean"},
+        "bootstrap_samples": {"type": "integer", "minimum": 100},
+        "analysis_seed": {"type": "integer"},
+        "sesoi": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}
+      },
+      "not": {"required": ["replicates", "seeds"]},
+      "additionalProperties": false
+    },
+    "tasks": {
+      "type": "object",
+      "required": ["manifest"],
+      "properties": {
+        "manifest": {"type": "string", "minLength": 1},
+        "ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "limit": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "required": ["provider", "name", "context_window_tokens"],
+      "properties": {
+        "provider": {"$ref": "#/$defs/identifier"},
+        "name": {"type": "string", "minLength": 1},
+        "base_url": {"type": ["string", "null"], "format": "uri"},
+        "api_key_env": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+        "requires_api_key": {"type": "boolean"},
+        "context_window_tokens": {"type": "integer", "minimum": 128},
+        "max_output_tokens": {"type": "integer", "minimum": 1},
+        "temperature": {"type": "number", "minimum": 0},
+        "timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "retries": {"type": "integer", "minimum": 0},
+        "supports_seed": {"type": "boolean"},
+        "json_mode": {"type": "boolean"},
+        "input_price_per_million": {"type": ["number", "null"], "minimum": 0},
+        "output_price_per_million": {"type": ["number", "null"], "minimum": 0},
+        "cache_read_price_per_million": {"type": ["number", "null"], "minimum": 0},
+        "cache_write_price_per_million": {"type": ["number", "null"], "minimum": 0},
+        "plugin_options": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "agent": {
+      "type": "object",
+      "properties": {
+        "max_turns": {"type": "integer", "minimum": 1},
+        "max_total_tokens": {"type": "integer", "minimum": 1},
+        "max_cost_usd": {"type": ["number", "null"], "minimum": 0},
+        "system_prompt": {"type": ["string", "null"], "minLength": 1},
+        "prompt_file": {"type": ["string", "null"], "minLength": 1}
+      },
+      "not": {
+        "required": ["system_prompt", "prompt_file"],
+        "properties": {
+          "system_prompt": {"type": "string"},
+          "prompt_file": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "docker": {
+      "type": "object",
+      "required": ["image"],
+      "properties": {
+        "image": {"type": "string", "minLength": 1},
+        "binary": {"type": "string", "minLength": 1},
+        "user": {"type": "string", "pattern": "^[1-9][0-9]*:[1-9][0-9]*$"},
+        "cpus": {"type": "number", "exclusiveMinimum": 0},
+        "memory_bytes": {"type": "integer", "minimum": 16777216},
+        "pids_limit": {"type": "integer", "minimum": 1},
+        "tmpfs_bytes": {"type": "integer", "minimum": 1048576},
+        "nofile_limit": {"type": "integer", "minimum": 16},
+        "cleanup_timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "python_executable": {"type": "string", "minLength": 1},
+        "platform": {"type": ["string", "null"]},
+        "require_image_digest": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "sandbox": {
+      "type": "object",
+      "properties": {
+        "backend": {"enum": ["local", "docker"]},
+        "max_file_bytes": {"type": "integer", "minimum": 1},
+        "max_observation_chars": {"type": "integer", "minimum": 1},
+        "max_process_output_chars": {"type": "integer", "minimum": 1},
+        "test_timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "docker": {"anyOf": [{"$ref": "#/$defs/docker"}, {"type": "null"}]}
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["backend"],
+            "properties": {"backend": {"const": "docker"}}
+          },
+          "then": {
+            "required": ["docker"],
+            "properties": {"docker": {"$ref": "#/$defs/docker"}}
+          },
+          "else": {"properties": {"docker": {"type": "null"}}}
+        }
+      ],
+      "additionalProperties": false
+    },
+    "variant": {
+      "type": "object",
+      "required": ["id", "policy"],
+      "properties": {
+        "id": {"$ref": "#/$defs/identifier"},
+        "policy": {"$ref": "#/$defs/identifier"},
+        "trigger_ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "target_ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "every_turns": {"type": "integer", "minimum": 1},
+        "keep_recent_bundles": {"type": "integer", "minimum": 0},
+        "weights": {
+          "type": "object",
+          "properties": {
+            "recency": {"type": "number", "minimum": 0},
+            "referenced": {"type": "number", "minimum": 0},
+            "subgoal": {"type": "number", "minimum": 0},
+            "constraint": {"type": "number", "minimum": 0},
+            "task": {"type": "number", "minimum": 0},
+            "error": {"type": "number", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "plugin_options": {"type": "object"},
+        "tools": {
+          "type": ["array", "null"],
+          "uniqueItems": true,
+          "items": {"enum": ["list_files", "read_file", "search", "search_symbols", "replace", "write_file", "run_tests"]}
+        },
+        "instructions": {"type": ["string", "null"], "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
