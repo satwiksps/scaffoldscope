@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "experiment": {
+    "name": "context-ablation",
+    "replicates": [1729, 2718, 31415],
+    "max_workers": 2,
+    "output_dir": "../runs",
+    "baseline": "none",
+    "primary_comparison": "selective",
+    "randomize_variant_order": true,
+    "bootstrap_samples": 20000,
+    "analysis_seed": 20260815,
+    "sesoi": 0.05
+  },
+  "tasks": {
+    "manifest": "tasks.example.jsonl",
+    "limit": 50
+  },
+  "model": {
+    "provider": "openai_compatible",
+    "name": "pin-an-exact-model-revision",
+    "base_url": "https://your-provider.example/v1",
+    "api_key_env": "OPENAI_API_KEY",
+    "requires_api_key": true,
+    "context_window_tokens": 32768,
+    "max_output_tokens": 2048,
+    "temperature": 0.2,
+    "timeout_seconds": 120,
+    "retries": 2,
+    "supports_seed": false,
+    "json_mode": true,
+    "input_price_per_million": null,
+    "output_price_per_million": null,
+    "cache_read_price_per_million": null,
+    "cache_write_price_per_million": null
+  },
+  "agent": {
+    "max_turns": 30,
+    "max_total_tokens": 200000,
+    "max_cost_usd": null
+  },
+  "sandbox": {
+    "max_file_bytes": 1000000,
+    "max_observation_chars": 20000,
+    "max_process_output_chars": 20000,
+    "test_timeout_seconds": 300
+  },
+  "variants": [
+    {"id": "none", "policy": "none"},
+    {
+      "id": "reactive-95",
+      "policy": "reactive",
+      "trigger_ratio": 0.95,
+      "target_ratio": 0.65,
+      "keep_recent_bundles": 2
+    },
+    {
+      "id": "periodic-4",
+      "policy": "periodic",
+      "every_turns": 4,
+      "target_ratio": 0.65,
+      "keep_recent_bundles": 2
+    },
+    {
+      "id": "selective",
+      "policy": "selective",
+      "trigger_ratio": 0.85,
+      "target_ratio": 0.7,
+      "keep_recent_bundles": 2,
+      "weights": {
+        "recency": 2.0,
+        "referenced": 2.5,
+        "subgoal": 1.5,
+        "constraint": 8.0,
+        "task": 5.0,
+        "error": 2.0
+      }
+    }
+  ]
+}
