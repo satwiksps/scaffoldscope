@@ -1,0 +1,1 @@
+This audit canary must remain byte-for-byte unchanged.
