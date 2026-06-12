@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "experiment": {
+    "name": "{{EXPERIMENT_NAME}}",
+    "replicates": [101],
+    "max_workers": 1,
+    "output_dir": "runs",
+    "baseline": "none",
+    "primary_comparison": "selective",
+    "randomize_variant_order": true,
+    "bootstrap_samples": 2000,
+    "analysis_seed": 20260815,
+    "sesoi": 0.1
+  },
+  "tasks": {
+    "manifest": "tasks.jsonl"
+  },
+  "model": {
+    "provider": "scripted",
+    "name": "starter-script-v1",
+    "context_window_tokens": 2048,
+    "max_output_tokens": 256,
+    "temperature": 0.0,
+    "supports_seed": false,
+    "input_price_per_million": 0.0,
+    "output_price_per_million": 0.0
+  },
+  "agent": {
+    "max_turns": 6,
+    "max_total_tokens": 12000,
+    "max_cost_usd": null
+  },
+  "sandbox": {
+    "max_file_bytes": 100000,
+    "max_observation_chars": 8000,
+    "max_process_output_chars": 8000,
+    "test_timeout_seconds": 30
+  },
+  "variants": [
+    {
+      "id": "none",
+      "policy": "none"
+    },
+    {
+      "id": "reactive-80",
+      "policy": "reactive",
+      "trigger_ratio": 0.8,
+      "target_ratio": 0.55,
+      "keep_recent_bundles": 1
+    },
+    {
+      "id": "selective",
+      "policy": "selective",
+      "trigger_ratio": 0.8,
+      "target_ratio": 0.55,
+      "keep_recent_bundles": 1,
+      "weights": {
+        "constraint": 10.0,
+        "error": 5.0,
+        "task": 6.0
+      }
+    }
+  ]
+}

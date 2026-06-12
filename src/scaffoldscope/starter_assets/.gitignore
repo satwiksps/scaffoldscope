@@ -1,0 +1,22 @@
+# ScaffoldScope evidence and local secrets
+runs/
+.env
+.env.*
+!.env.example
+!.env.sample
+*.key
+*.pem
+*.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
