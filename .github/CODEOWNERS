@@ -1,0 +1,7 @@
+# Default ownership keeps security-sensitive and protocol changes visible to the maintainer.
+* @satwiksps
+
+/.github/ @satwiksps
+/SECURITY.md @satwiksps
+/site/ @satwiksps
+/src/scaffoldscope/schemas/ @satwiksps

@@ -1,0 +1,63 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:30"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    groups:
+      website:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    # Framework and compiler majors are reviewed as explicit compatibility work.
+    # Security updates are still raised regardless of this version-update rule.
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+    commit-message:
+      prefix: "chore(site-deps)"
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    groups:
+      python-tooling:
+        patterns:
+          - build
+          - hatchling
+          - mypy
+          - pre-commit
+          - pytest
+          - pytest-cov
+          - ruff
+          - twine
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:30"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(actions)"
