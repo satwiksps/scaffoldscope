@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and experiment design help
+    url: https://github.com/satwiksps/scaffoldscope/discussions/new/choose
+    about: Ask usage questions and discuss study designs without filing a bug.
+  - name: Private security report
+    url: https://github.com/satwiksps/scaffoldscope/security/advisories/new
+    about: Report vulnerabilities privately. Never place exploit details or secrets in a public issue.

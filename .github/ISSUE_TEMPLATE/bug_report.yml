@@ -1,0 +1,74 @@
+name: Bug report
+description: Report a reproducible defect in ScaffoldScope.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve ScaffoldScope. Remove secrets and proprietary repository content from every attachment and trace.
+  - type: input
+    id: version
+    attributes:
+      label: ScaffoldScope version
+      description: Output of `scaffoldscope --version`, or the commit SHA.
+      placeholder: scaffoldscope 0.3.0
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - GitHub Release wheel
+        - Source checkout / editable install
+        - Source distribution
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, architecture, Python version, and relevant Git/Docker versions.
+      placeholder: Ubuntu 24.04, x86_64, Python 3.14
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include the exact command and the smallest redacted config or fixture that reproduces the problem.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the complete error and exit code. Attach only sanitized artifacts.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Relevant task IDs, variant IDs, replicates, run manifest hashes, or regression range.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed API keys, credentials, private source, and sensitive traces.
+          required: true
+        - label: I understand that LocalSandbox is not an operating-system security boundary.
+          required: true

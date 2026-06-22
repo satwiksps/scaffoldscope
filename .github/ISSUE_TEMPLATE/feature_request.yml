@@ -1,0 +1,55 @@
+name: Feature request
+description: Propose a measurable addition to the harness or ablation rig.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Strong proposals identify the measurement problem, the controlled variable, and how the change avoids introducing a new confound.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What concrete workflow or research problem is currently difficult or impossible?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful interface and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: measurement
+    attributes:
+      label: Measurement and confounds
+      description: What would vary, what must remain pinned, and which metrics should establish value?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include workarounds or existing projects that address part of the problem.
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Contribution interest
+      options:
+        - I can open a pull request
+        - I can help design or test it
+        - I am proposing the idea only
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and discussions for similar proposals.
+          required: true
+        - label: This proposal preserves auditable configs and raw result artifacts.
+          required: true

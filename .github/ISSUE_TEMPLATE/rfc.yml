@@ -1,0 +1,56 @@
+name: Protocol RFC
+description: Propose a material change to an experiment, evaluator, schema, license, or governance rule.
+title: "[RFC]: "
+labels:
+  - rfc
+body:
+  - type: markdown
+    attributes:
+      value: |
+        RFCs make protocol-breaking decisions reviewable before implementation. State the affected evidence contract and a migration path.
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision requested
+      description: What exact decision should maintainers and contributors make?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation and evidence
+      description: Describe the failure mode, affected users, and evidence supporting the change.
+    validations:
+      required: true
+  - type: textarea
+    id: specification
+    attributes:
+      label: Proposed specification
+      description: Define behavior, configuration, result-schema, compatibility, and security implications.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include the status quo and explain the trade-offs.
+    validations:
+      required: true
+  - type: textarea
+    id: migration
+    attributes:
+      label: Migration and validation
+      description: Explain versioning, migration, tests, preregistered comparisons, and rollback.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues, discussions, and accepted RFCs.
+          required: true
+        - label: I identified all experiment and result semantics that would change.
+          required: true
+        - label: I removed credentials, private data, and sensitive traces.
+          required: true
