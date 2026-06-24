@@ -1,0 +1,442 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Verify and build release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require a verified signed tag from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --force --no-tags origin main:refs/remotes/origin/main
+          if [ "$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")" != "tag" ]; then
+            echo "release ref must be an annotated tag" >&2
+            exit 1
+          fi
+          tag_target="$(git rev-parse "refs/tags/${GITHUB_REF_NAME}^{commit}")"
+          main_target="$(git rev-parse refs/remotes/origin/main)"
+          if [ "$tag_target" != "$main_target" ]; then
+            if ! git merge-base --is-ancestor "$tag_target" refs/remotes/origin/main; then
+              echo "release tag must point at a commit from main" >&2
+              exit 1
+            fi
+            if ! gh release view "${GITHUB_REF_NAME}" \
+              --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              echo "a new release tag must point at the exact current main commit" >&2
+              exit 1
+            fi
+          fi
+          tag_object="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" --jq .object.sha)"
+          if [ "$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object}" --jq .verification.verified)" != "true" ]; then
+            echo "GitHub did not verify the release-tag signature" >&2
+            exit 1
+          fi
+          echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct "$tag_target")" >> "$GITHUB_ENV"
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install project and release tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Verify the project website
+        working-directory: site
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm run build
+      - name: Require the tag to match the package version
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import tomllib
+          from pathlib import Path
+          from scaffoldscope import __version__
+
+          expected = f"v{__version__}"
+          actual = os.environ["GITHUB_REF_NAME"]
+          if actual != expected:
+              raise SystemExit(f"release tag {actual!r} does not match {expected!r}")
+          citation_version = next(
+              line.split(":", 1)[1].strip().strip('"')
+              for line in Path("CITATION.cff").read_text(encoding="utf-8").splitlines()
+              if line.startswith("version:")
+          )
+          if citation_version != __version__:
+              raise SystemExit(
+                  f"CITATION.cff version {citation_version!r} does not match {__version__!r}"
+              )
+          site_version = json.loads(
+              Path("site/package.json").read_text(encoding="utf-8")
+          )["version"]
+          if site_version != __version__:
+              raise SystemExit(
+                  f"site package version {site_version!r} does not match {__version__!r}"
+              )
+          site_lock = json.loads(Path("site/package-lock.json").read_text(encoding="utf-8"))
+          lock_versions = {
+              site_lock.get("version"),
+              site_lock.get("packages", {}).get("", {}).get("version"),
+          }
+          if lock_versions != {__version__}:
+              raise SystemExit(
+                  f"site lockfile versions {sorted(map(str, lock_versions))!r} "
+                  f"do not match {__version__!r}"
+              )
+          project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))[
+              "project"
+          ]
+          for label in ("Documentation", "Changelog"):
+              url = project["urls"][label]
+              if f"v{__version__}" not in url:
+                  raise SystemExit(
+                      f"pyproject {label} URL {url!r} is not pinned to v{__version__}"
+                  )
+          readme = Path("README.md").read_text(encoding="utf-8")
+          if f"/blob/v{__version__}/" not in readme:
+              raise SystemExit(f"README has no links pinned to v{__version__}")
+          PY
+      - name: Run quality gates
+        run: |
+          python -m ruff format --check src tests
+          python -m ruff check src tests
+          python -m mypy --platform linux
+          python -m mypy --platform win32
+          python -m mypy --platform darwin
+          python -m pytest --cov=scaffoldscope --cov-report=term-missing --cov-fail-under=70
+      - name: Build wheel and source distribution
+        run: python -m build
+      - name: Validate distribution metadata
+        run: python -m twine check --strict dist/*
+      - name: Prepare curated release notes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from scaffoldscope import __version__
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          heading = f"## [{__version__}]"
+          start = changelog.find(heading)
+          if start < 0:
+              raise SystemExit(f"CHANGELOG.md has no {heading!r} release section")
+          body_start = changelog.find("\n", start)
+          body_end = changelog.find("\n## ", body_start)
+          if body_end < 0:
+              body_end = len(changelog)
+          notes = changelog[body_start:body_end].strip()
+          if not notes:
+              raise SystemExit(f"CHANGELOG.md section {heading!r} is empty")
+          repository = "https://github.com/satwiksps/scaffoldscope"
+          rendered = (
+              f"ScaffoldScope {__version__} is an immutable research-instrument snapshot.\n\n"
+              f"{notes}\n\n"
+              f"Read the [documentation]({repository}/tree/v{__version__}/docs), "
+              f"verify downloads with `SHA256SUMS`, and report vulnerabilities through "
+              f"[private vulnerability reporting]({repository}/security/advisories/new).\n"
+          )
+          notes_path = Path("release-notes/RELEASE_NOTES.md")
+          notes_path.parent.mkdir(parents=True, exist_ok=True)
+          notes_path.write_text(rendered, encoding="utf-8")
+          PY
+      - name: Verify wheel contents
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from tarfile import open as open_tar
+          from zipfile import ZipFile
+
+          wheels = list(Path("dist").glob("*.whl"))
+          if len(wheels) != 1:
+              raise SystemExit(f"expected one wheel, found {len(wheels)}")
+          with ZipFile(wheels[0]) as archive:
+              names = set(archive.namelist())
+          required = {
+              "scaffoldscope/py.typed",
+              "scaffoldscope/plugins.py",
+              "scaffoldscope/docker_sandbox.py",
+              "scaffoldscope/integrity.py",
+              "scaffoldscope/locking.py",
+              "scaffoldscope/demo/experiment.json",
+              "scaffoldscope/demo/tasks.jsonl",
+              "scaffoldscope/schemas/experiment.schema.json",
+              "scaffoldscope/starter_assets/.gitignore",
+              "scaffoldscope/starter_assets/experiment.json",
+              "scaffoldscope/starter_assets/tasks.jsonl",
+          }
+          missing = required - names
+          if missing:
+              raise SystemExit(f"wheel is missing required files: {sorted(missing)}")
+          fixture_roots = {
+              "scaffoldscope/demo/fixtures/calculator/",
+              "scaffoldscope/demo/fixtures/inventory/",
+              "scaffoldscope/demo/fixtures/slug/",
+          }
+          absent = [root for root in fixture_roots if not any(name.startswith(root) for name in names)]
+          if absent:
+              raise SystemExit(f"wheel is missing demo fixture trees: {absent}")
+          unwanted = [name for name in names if "__pycache__" in name or name.endswith((".pyc", ".pyo"))]
+          if unwanted:
+              raise SystemExit(f"wheel contains generated bytecode: {unwanted}")
+
+          source_archives = list(Path("dist").glob("*.tar.gz"))
+          if len(source_archives) != 1:
+              raise SystemExit(f"expected one source archive, found {len(source_archives)}")
+          with open_tar(source_archives[0], "r:gz") as archive:
+              source_names = archive.getnames()
+          included_site_files = [name for name in source_names if "/site/" in name]
+          if included_site_files:
+              raise SystemExit(
+                  "Python source distribution contains website files: "
+                  f"{included_site_files[:10]}"
+              )
+          PY
+      - name: Smoke-test the installed wheel
+        run: |
+          python -m pip install --force-reinstall --no-deps dist/*.whl
+          smoke_dir="$(mktemp -d)"
+          cd "$smoke_dir"
+          scaffoldscope --version
+          scaffoldscope doctor
+          scaffoldscope schema --out experiment.schema.json
+          scaffoldscope init starter --name release-smoke
+          scaffoldscope budget starter/experiment.json
+          scaffoldscope run starter/experiment.json
+          experiment_dir="$(find starter/runs -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          scaffoldscope status "$experiment_dir"
+          scaffoldscope check "$experiment_dir"
+          scaffoldscope bundle "$experiment_dir" --out evidence.zip
+          scaffoldscope verify-bundle evidence.zip
+      - name: Smoke-test the example plugin
+        run: |
+          python -m pip install --no-deps ./examples/plugins/pinned-tail
+          scaffoldscope plugins --check
+      - name: Upload release distributions
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions-${{ github.ref_name }}
+          path: |
+            dist/scaffoldscope-*.whl
+            dist/scaffoldscope-*.tar.gz
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+      - name: Upload curated release notes
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-notes-${{ github.ref_name }}
+          path: release-notes/RELEASE_NOTES.md
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download release distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-${{ github.ref_name }}
+          path: dist/
+      - name: Download curated release notes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-notes-${{ github.ref_name }}
+          path: release-notes/
+      - name: Create SHA-256 checksums
+        run: |
+          cd dist
+          sha256sum scaffoldscope-*.whl scaffoldscope-*.tar.gz > SHA256SUMS
+      - name: Create or repair draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            if [ "$(gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft)" = "true" ]; then
+              gh release edit "${GITHUB_REF_NAME}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --notes-file release-notes/RELEASE_NOTES.md \
+                --title "ScaffoldScope ${GITHUB_REF_NAME}"
+              gh release upload "${GITHUB_REF_NAME}" \
+                dist/scaffoldscope-*.whl \
+                dist/scaffoldscope-*.tar.gz \
+                dist/SHA256SUMS \
+                --repo "${GITHUB_REPOSITORY}" \
+                --clobber
+            else
+              expected_assets="SHA256SUMS
+          scaffoldscope-${GITHUB_REF_NAME#v}-py3-none-any.whl
+          scaffoldscope-${GITHUB_REF_NAME#v}.tar.gz"
+              actual_assets="$(gh release view "${GITHUB_REF_NAME}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --json assets \
+                --jq '.assets[].name' | sort)"
+              if [ "$actual_assets" != "$(printf '%s\n' "$expected_assets" | sort)" ]; then
+                echo "published release asset set differs from the rebuilt release" >&2
+                printf 'expected:\n%s\nactual:\n%s\n' "$expected_assets" "$actual_assets" >&2
+                exit 1
+              fi
+              published_dir="$(mktemp -d)"
+              gh release download "${GITHUB_REF_NAME}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --dir "$published_dir"
+              if ! cmp --silent dist/SHA256SUMS "$published_dir/SHA256SUMS"; then
+                echo "published release checksums differ from this reproducible rebuild" >&2
+                exit 1
+              fi
+              (
+                cd "$published_dir"
+                sha256sum --check SHA256SUMS
+              )
+              cmp --silent dist/scaffoldscope-*.whl "$published_dir"/scaffoldscope-*.whl
+              cmp --silent dist/scaffoldscope-*.tar.gz "$published_dir"/scaffoldscope-*.tar.gz
+              echo "Release ${GITHUB_REF_NAME} is already published with identical assets."
+            fi
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              dist/scaffoldscope-*.whl \
+              dist/scaffoldscope-*.tar.gz \
+              dist/SHA256SUMS \
+              --repo "${GITHUB_REPOSITORY}" \
+              --verify-tag \
+              --draft \
+              --notes-file release-notes/RELEASE_NOTES.md \
+              --title "ScaffoldScope ${GITHUB_REF_NAME}"
+          fi
+      - name: Verify exact GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          expected_assets="SHA256SUMS
+          scaffoldscope-${GITHUB_REF_NAME#v}-py3-none-any.whl
+          scaffoldscope-${GITHUB_REF_NAME#v}.tar.gz"
+          actual_assets="$(gh release view "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --json assets \
+            --jq '.assets[].name' | sort)"
+          if [ "$actual_assets" != "$(printf '%s\n' "$expected_assets" | sort)" ]; then
+            echo "GitHub Release has an unexpected asset set" >&2
+            printf 'expected:\n%s\nactual:\n%s\n' "$expected_assets" "$actual_assets" >&2
+            exit 1
+          fi
+          release_dir="$(mktemp -d)"
+          gh release download "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --dir "$release_dir"
+          cmp --silent dist/SHA256SUMS "$release_dir/SHA256SUMS"
+          (
+            cd "$release_dir"
+            sha256sum --check SHA256SUMS
+          )
+          cmp --silent dist/scaffoldscope-*.whl "$release_dir"/scaffoldscope-*.whl
+          cmp --silent dist/scaffoldscope-*.tar.gz "$release_dir"/scaffoldscope-*.tar.gz
+      - name: Publish immutable GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft)" = "true" ]; then
+            gh release edit "${GITHUB_REF_NAME}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --draft=false
+          else
+            echo "Release ${GITHUB_REF_NAME} is already published."
+          fi
+
+  publish:
+    name: Publish with trusted publishing
+    if: vars.PYPI_PUBLISH == 'true'
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/scaffoldscope/
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - name: Download release distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-${{ github.ref_name }}
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: true
+      - name: Verify published PyPI file digests
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          version = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          expected = {
+              path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+              for path in Path("dist").iterdir()
+              if path.name.endswith((".whl", ".tar.gz"))
+          }
+          endpoint = f"https://pypi.org/pypi/scaffoldscope/{version}/json"
+          for attempt in range(12):
+              try:
+                  with urllib.request.urlopen(endpoint, timeout=20) as response:
+                      payload = json.load(response)
+              except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+                  if attempt == 11:
+                      raise
+                  time.sleep(10)
+                  continue
+              published = {
+                  item["filename"]: item["digests"]["sha256"]
+                  for item in payload.get("urls", [])
+              }
+              if all(published.get(name) == digest for name, digest in expected.items()):
+                  break
+              if attempt == 11:
+                  raise SystemExit(
+                      f"PyPI files do not match the release artifacts: "
+                      f"expected={expected!r}, published={published!r}"
+                  )
+              time.sleep(10)
+          PY
