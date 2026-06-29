@@ -1,0 +1,41 @@
+{
+  "name": "scaffoldscope-site",
+  "version": "0.3.0",
+  "description": "The official ScaffoldScope project website.",
+  "private": true,
+  "license": "Apache-2.0",
+  "homepage": "https://scaffoldscope-azure.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satwiksps/scaffoldscope.git",
+    "directory": "site"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "build": "next build",
+    "check": "npm run lint && npm run typecheck",
+    "dev": "next dev",
+    "lint": "eslint . --max-warnings 0",
+    "start": "next start",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "geist": "1.7.2",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.1",
+    "postcss": "8.5.26",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3"
+  }
+}
