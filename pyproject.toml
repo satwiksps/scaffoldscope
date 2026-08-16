@@ -71,7 +71,7 @@ path = "src/scaffoldscope/__init__.py"
 packages = ["src/scaffoldscope"]
 
 [tool.hatch.build.targets.sdist]
-exclude = ["/site"]
+exclude = ["/.github", "/docs/assets", "/site"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers"

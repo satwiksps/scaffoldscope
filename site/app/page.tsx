@@ -121,7 +121,7 @@ export default function Home() {
                 </a>
               </div>
               <p className="mt-8 font-mono text-[11px] leading-6 text-dim">
-                Python 3.10+, no runtime dependencies, Apache-2.0
+                Python 3.10 through 3.14, Linux, macOS, Windows, Apache-2.0
               </p>
             </div>
             <ProjectWindow />

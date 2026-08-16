@@ -2,35 +2,38 @@
 
 <div align="center">
 
-![ScaffoldScope](https://raw.githubusercontent.com/satwiksps/scaffoldscope/v0.3.1/docs/assets/scaffoldscope.svg)
+![ScaffoldScope](https://raw.githubusercontent.com/satwiksps/scaffoldscope/main/docs/assets/scaffoldscope.svg)
 
-Controlled, paired ablations for coding-agent harnesses.
+Controlled experiments for coding-agent harnesses.
 
-[Website](https://scaffoldscope.vercel.app) | [Quickstart](#quickstart) | [What it measures](#what-it-measures) | [SWE-bench](#swe-bench) | [Documentation](#documentation)
+[Website](https://scaffoldscope.vercel.app) | [Install](#quickstart) | [How it works](#why-this-is-different) | [SWE-bench](#swe-bench) | [Documentation](#documentation)
 
-[![CI](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml/badge.svg)](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml)
-[![Codecov](https://codecov.io/gh/satwiksps/scaffoldscope/graph/badge.svg)](https://codecov.io/gh/satwiksps/scaffoldscope)
+[![CI](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml?query=branch%3Amain)
+[![CodeQL](https://github.com/satwiksps/scaffoldscope/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/satwiksps/scaffoldscope/actions/workflows/codeql.yml?query=branch%3Amain)
+[![Codecov](https://codecov.io/gh/satwiksps/scaffoldscope/graph/badge.svg?branch=main)](https://codecov.io/gh/satwiksps/scaffoldscope)
 [![PyPI](https://img.shields.io/pypi/v/scaffoldscope?logo=pypi&logoColor=white)](https://pypi.org/project/scaffoldscope/)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/pyproject.toml)
-[![License Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-6e9f18)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/LICENSE)
-[![Runtime dependencies zero](https://img.shields.io/badge/runtime%20dependencies-0-12b886)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/pyproject.toml)
+[![Python 3.10+](https://img.shields.io/pypi/pyversions/scaffoldscope?logo=python&logoColor=white)](https://pypi.org/project/scaffoldscope/)
+[![License Apache-2.0](https://img.shields.io/pypi/l/scaffoldscope)](https://github.com/satwiksps/scaffoldscope/blob/main/LICENSE)
 
 </div>
 
-Most coding-agent comparisons change the model, prompt, tools, context manager, retry behavior, and budget at once. ScaffoldScope turns those harness choices into explicit treatments:
+ScaffoldScope measures how coding-agent harness choices affect solve rate, token use, cost, and constraint retention. It holds the model, tasks, evaluator, and budget fixed while one scaffold treatment changes.
 
 > Same model. Same tasks. Same budget. One scaffold mechanism changed.
 
-It is a readable Python agent, a reproducible experiment runner, and an evidence pipeline in one zero-dependency package. It can compare context policies, tool surfaces, and treatment instructions; run evaluations locally or in a locked-down Docker backend; export a complete SWE-bench evaluation matrix; and package the raw evidence into a deterministic, verifiable archive.
+It combines a readable Python agent, a paired experiment runner, and an evidence pipeline. Use it to compare context policies, tool surfaces, and treatment instructions; evaluate locally or in a locked-down Docker backend; export a complete SWE-bench matrix; and publish deterministic evidence archives.
+
+![ScaffoldScope compares context policies under a fixed model and task set](https://raw.githubusercontent.com/satwiksps/scaffoldscope/main/docs/assets/github-social-preview.png)
 
 ## Quickstart
 
-ScaffoldScope supports Python 3.10+ on Linux, macOS, and Windows.
+ScaffoldScope supports Python 3.10 through 3.14 on Linux, macOS, and Windows. Docker is optional and only required for container-isolated evaluation.
 
 Install from PyPI:
 
 ```bash
 python -m pip install scaffoldscope
+scaffoldscope --version
 ```
 
 To work from source instead:
@@ -59,6 +62,16 @@ For the larger built-in engine demonstration:
 ```bash
 scaffoldscope demo
 ```
+
+### Choose a workflow
+
+| Goal | Start here |
+|---|---|
+| Learn the experiment format without API cost | `scaffoldscope init my-study --name my-study` |
+| Exercise the complete local engine | `scaffoldscope demo` |
+| Run a real OpenAI-compatible model | [Real models](#real-models) |
+| Evaluate untrusted repository code | [Docker evaluation](#docker-evaluation) |
+| Compare treatments on SWE-bench | [SWE-bench](#swe-bench) |
 
 ## Why this is different
 
@@ -132,6 +145,18 @@ scaffoldscope verify-bundle my-study-evidence.zip
 
 Every trial owns its workspace and artifacts. Parallel workers never append to a shared result file, and an OS-released lock excludes a second experiment writer. Matching completed trials resume without another model call; identity drift is rejected instead of silently mixing evidence.
 
+### What a run writes
+
+| Artifact | Purpose |
+|---|---|
+| `manifest.json` and `config.resolved.json` | Frozen experiment identity and resolved configuration |
+| `plan.jsonl` | Complete task, treatment, replicate, and execution-order matrix |
+| `episodes.jsonl` | One durable result row per planned trial |
+| `trials/<trial-id>/events.jsonl` | Ordered model, context, tool, evaluation, and lifecycle events |
+| `trials/<trial-id>/patch.diff` | Exact repository change produced by the trial |
+| `summary.json`, `report.md`, `report.html` | Machine-readable and human-readable analysis |
+| Evidence ZIP | Workspace-free archive with checksums and integrity metadata |
+
 ## Real models
 
 The built-in adapter targets OpenAI-compatible `/chat/completions` APIs. Start from a generated project so its task and workspace paths remain valid, then replace only the `model` object in `real-model-study/experiment.json`. Pin an immutable model revision whenever the provider exposes one:
@@ -196,7 +221,7 @@ Remote endpoints carrying a key must use HTTPS. Provider-specific adapters can b
 }
 ```
 
-The backend never pulls during a run. It preflights the exact local image, disables networking, runs as non-root, drops all capabilities, uses a read-only root, protects evaluator files, scrubs harness credentials, and applies CPU, memory, process, file-descriptor, output, and timeout limits. Read the [Docker threat model and setup guide](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/docker.md).
+The backend never pulls during a run. It preflights the exact local image, disables networking, runs as non-root, drops all capabilities, uses a read-only root, protects evaluator files, scrubs harness credentials, and applies CPU, memory, process, file-descriptor, output, and timeout limits. Read the [Docker threat model and setup guide](https://github.com/satwiksps/scaffoldscope/blob/main/docs/docker.md).
 
 ## SWE-bench
 
@@ -223,7 +248,7 @@ scaffoldscope ingest-swebench runs/lite-ablation-abc12345 official-results.json 
   --image-set-digest <image-manifest-digest>
 ```
 
-See the [SWE-bench workflow](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/swebench.md) for cache hazards, evaluation commands, and interpretation limits.
+See the [SWE-bench workflow](https://github.com/satwiksps/scaffoldscope/blob/main/docs/swebench.md) for cache hazards, evaluation commands, and interpretation limits.
 
 ## Extensions
 
@@ -234,7 +259,7 @@ scaffoldscope plugins
 scaffoldscope plugins --check
 ```
 
-Discovery is deterministic. Built-in names cannot be shadowed, compatibility ranges are checked, plugin options are passed through a typed request, and loaded implementation files are hashed into experiment identity. Start with the [extension contract](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/extensions.md) and the [standalone example plugin](https://github.com/satwiksps/scaffoldscope/tree/v0.3.1/examples/plugins/pinned-tail).
+Discovery is deterministic. Built-in names cannot be shadowed, compatibility ranges are checked, plugin options are passed through a typed request, and loaded implementation files are hashed into experiment identity. Start with the [extension contract](https://github.com/satwiksps/scaffoldscope/blob/main/docs/extensions.md) and the [standalone example plugin](https://github.com/satwiksps/scaffoldscope/tree/main/examples/plugins/pinned-tail).
 
 ## Reports and evidence
 
@@ -259,29 +284,35 @@ The deterministic evidence bundle excludes mutable workspaces, retains archived 
 - Provider model/fingerprint drift, duplicate trajectories, estimated usage, incomplete pairing, and low treatment exposure produce explicit warnings.
 - Absolute benchmark scores can be contaminated; the design supports relative within-model claims, not immunity from contamination.
 
-Read the [experiment-design contract](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/experiment-design.md) before spending API budget.
+Read the [experiment-design contract](https://github.com/satwiksps/scaffoldscope/blob/main/docs/experiment-design.md) before spending API budget.
 
 ## Documentation
 
-- [Operator guide](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/operator-guide.md)
-- [Configuration reference](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/configuration.md)
-- [Architecture](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/architecture.md)
-- [Experiment design](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/experiment-design.md)
-- [Preregistration template](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/protocol-template.md)
-- [Result schema](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/results-schema.md)
-- [Docker evaluator](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/docker.md)
-- [SWE-bench interoperability](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/swebench.md)
-- [Plugin API](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/extensions.md)
-- [Release process](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/releasing.md)
+- [Operator guide](https://github.com/satwiksps/scaffoldscope/blob/main/docs/operator-guide.md)
+- [Configuration reference](https://github.com/satwiksps/scaffoldscope/blob/main/docs/configuration.md)
+- [Architecture](https://github.com/satwiksps/scaffoldscope/blob/main/docs/architecture.md)
+- [Experiment design](https://github.com/satwiksps/scaffoldscope/blob/main/docs/experiment-design.md)
+- [Preregistration template](https://github.com/satwiksps/scaffoldscope/blob/main/docs/protocol-template.md)
+- [Result schema](https://github.com/satwiksps/scaffoldscope/blob/main/docs/results-schema.md)
+- [Docker evaluator](https://github.com/satwiksps/scaffoldscope/blob/main/docs/docker.md)
+- [SWE-bench interoperability](https://github.com/satwiksps/scaffoldscope/blob/main/docs/swebench.md)
+- [Plugin API](https://github.com/satwiksps/scaffoldscope/blob/main/docs/extensions.md)
+- [Release process](https://github.com/satwiksps/scaffoldscope/blob/main/docs/releasing.md)
 
 ## Contributing
 
 The highest-value contributions are falsifiable and reproducible: a mechanism with deterministic accounting tests, a safety invariant, a complete result bundle including failures, or a protocol RFC identifying one confound.
 
-Read [CONTRIBUTING.md](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/CONTRIBUTING.md), [GOVERNANCE.md](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/GOVERNANCE.md), and [CODE_OF_CONDUCT.md](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/CODE_OF_CONDUCT.md). Security reports follow [SECURITY.md](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/SECURITY.md).
+Read [CONTRIBUTING.md](https://github.com/satwiksps/scaffoldscope/blob/main/CONTRIBUTING.md), [GOVERNANCE.md](https://github.com/satwiksps/scaffoldscope/blob/main/GOVERNANCE.md), and [CODE_OF_CONDUCT.md](https://github.com/satwiksps/scaffoldscope/blob/main/CODE_OF_CONDUCT.md). Security reports follow [SECURITY.md](https://github.com/satwiksps/scaffoldscope/blob/main/SECURITY.md).
+
+## Getting help
+
+- Use [GitHub Discussions](https://github.com/satwiksps/scaffoldscope/discussions) for setup and experiment-design questions.
+- Open an [issue](https://github.com/satwiksps/scaffoldscope/issues/new/choose) for reproducible defects or focused feature requests.
+- Report vulnerabilities through [private vulnerability reporting](https://github.com/satwiksps/scaffoldscope/security/advisories/new), not a public issue.
 
 ## Maturity, license, and citation
 
 ScaffoldScope 0.3 is an alpha research instrument with a tested core evidence contract. The scripted demo tests the workflow; it does not measure model performance.
 
-Apache-2.0. See [LICENSE](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/LICENSE) and [NOTICE](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/NOTICE). If ScaffoldScope supports published work, cite the archived release via [CITATION.cff](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/CITATION.cff) and include the config hash, evaluator revision, and evidence-bundle checksum.
+Apache-2.0. See [LICENSE](https://github.com/satwiksps/scaffoldscope/blob/main/LICENSE) and [NOTICE](https://github.com/satwiksps/scaffoldscope/blob/main/NOTICE). If ScaffoldScope supports published work, cite the archived release via [CITATION.cff](https://github.com/satwiksps/scaffoldscope/blob/main/CITATION.cff) and include the config hash, evaluator revision, and evidence-bundle checksum.

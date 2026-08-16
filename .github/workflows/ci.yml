@@ -106,7 +106,7 @@ jobs:
           python -m pytest
           --cov=scaffoldscope
           --cov-report=term-missing
-          --cov-fail-under=70
+          --cov-fail-under=80
       - name: Run tests
         if: matrix.os != 'ubuntu-latest' || matrix.python != '3.14'
         run: python -m pytest
@@ -138,12 +138,13 @@ jobs:
           --cov=scaffoldscope
           --cov-report=xml:coverage.xml
           --cov-report=term-missing
-          --cov-fail-under=70
+          --cov-fail-under=80
       - name: Upload coverage
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           fail_ci_if_error: true
           files: ./coverage.xml
+          disable_search: true
           use_oidc: true
 
   site:
@@ -175,7 +176,7 @@ jobs:
 
   package:
     name: Build and inspect distributions
-    needs: [quality, tests, coverage, site]
+    needs: [quality, tests, site]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -241,11 +242,16 @@ jobs:
               raise SystemExit(f"expected one source archive, found {len(source_archives)}")
           with open_tar(source_archives[0], "r:gz") as archive:
               source_names = archive.getnames()
-          included_site_files = [name for name in source_names if "/site/" in name]
-          if included_site_files:
+          repository_only_roots = ("/.github/", "/docs/assets/", "/site/")
+          repository_only_files = [
+              name
+              for name in source_names
+              if any(root in name for root in repository_only_roots)
+          ]
+          if repository_only_files:
               raise SystemExit(
-                  "Python source distribution contains website files: "
-                  f"{included_site_files[:10]}"
+                  "Python source distribution contains repository-only files: "
+                  f"{repository_only_files[:10]}"
               )
           PY
       - name: Smoke-test the installed wheel

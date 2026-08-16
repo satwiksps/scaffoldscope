@@ -12,6 +12,13 @@ This file records user-visible changes to ScaffoldScope. The project follows
   quickstart instructions.
 - Website copy and metadata are shorter. Social assets and Codecov reporting are
   included.
+- The README now has clearer workflow guidance, artifact documentation, current
+  branch links, and focused project badges.
+- Repository maintenance adds an explicit Codecov policy and code ownership.
+- The Apache-2.0 license appendix uses the canonical upstream placeholder instead
+  of a stale project name.
+- Python source distributions exclude website files, repository workflows, and
+  promotional images that are not used by the installed package.
 
 ## [0.3.1] - 2026-08-16
 

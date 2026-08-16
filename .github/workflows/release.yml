@@ -123,8 +123,11 @@ jobs:
                       f"pyproject {label} URL {url!r} is not pinned to v{__version__}"
                   )
           readme = Path("README.md").read_text(encoding="utf-8")
-          if f"/blob/v{__version__}/" not in readme:
-              raise SystemExit(f"README has no links pinned to v{__version__}")
+          canonical_readme_link = (
+              "https://github.com/satwiksps/scaffoldscope/blob/main/"
+          )
+          if canonical_readme_link not in readme:
+              raise SystemExit("README has no canonical main-branch links")
           PY
       - name: Run quality gates
         run: |
@@ -213,11 +216,16 @@ jobs:
               raise SystemExit(f"expected one source archive, found {len(source_archives)}")
           with open_tar(source_archives[0], "r:gz") as archive:
               source_names = archive.getnames()
-          included_site_files = [name for name in source_names if "/site/" in name]
-          if included_site_files:
+          repository_only_roots = ("/.github/", "/docs/assets/", "/site/")
+          repository_only_files = [
+              name
+              for name in source_names
+              if any(root in name for root in repository_only_roots)
+          ]
+          if repository_only_files:
               raise SystemExit(
-                  "Python source distribution contains website files: "
-                  f"{included_site_files[:10]}"
+                  "Python source distribution contains repository-only files: "
+                  f"{repository_only_files[:10]}"
               )
           PY
       - name: Smoke-test the installed wheel
