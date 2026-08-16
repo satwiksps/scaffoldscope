@@ -76,7 +76,7 @@ class CliTests(unittest.TestCase):
         with redirect_stdout(output), self.assertRaises(SystemExit) as exited:
             main(["--version"])
         self.assertEqual(exited.exception.code, 0)
-        self.assertIn("scaffoldscope 0.3.0", output.getvalue())
+        self.assertIn("scaffoldscope 0.3.1", output.getvalue())
 
         output = io.StringIO()
         with redirect_stdout(output):

@@ -369,7 +369,7 @@ class PluginRegistryTests(unittest.TestCase):
         )
         with self.assertRaises(PluginCompatibilityError) as core_error:
             PluginRegistry.discover(entry_points=[wrong_core]).load_context_policy("old.policy")
-        self.assertIn("not installed version 0.3.0", str(core_error.exception))
+        self.assertIn("not installed version 0.3.1", str(core_error.exception))
 
     def test_wrong_export_kind_and_missing_plugin_are_actionable(self) -> None:
         wrong_kind = _EntryPoint(

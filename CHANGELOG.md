@@ -8,9 +8,11 @@ This file records user-visible changes to ScaffoldScope. The project follows
 
 No user-visible changes yet.
 
-## [0.3.0] - 2026-08-16
+## [0.3.1] - 2026-08-16
 
-Initial public release.
+Initial public release from the current repository. Version `0.3.1` is used
+because GitHub's immutable-release protection prevents reuse of a release tag
+from the deleted predecessor repository.
 
 ### Added
 
@@ -47,5 +49,5 @@ Initial public release.
 - Imported SWE-bench generations remain outcome-pending until official evaluator
   results are ingested.
 
-[Unreleased]: https://github.com/satwiksps/scaffoldscope/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/satwiksps/scaffoldscope/releases/tag/v0.3.0
+[Unreleased]: https://github.com/satwiksps/scaffoldscope/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/satwiksps/scaffoldscope/releases/tag/v0.3.1

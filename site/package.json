@@ -1,6 +1,6 @@
 {
   "name": "scaffoldscope-site",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "The official ScaffoldScope project website.",
   "private": true,
   "license": "Apache-2.0",

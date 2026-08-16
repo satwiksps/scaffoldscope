@@ -45,10 +45,10 @@ dependencies = []
 
 [project.urls]
 Homepage = "https://scaffoldscope.vercel.app"
-Documentation = "https://github.com/satwiksps/scaffoldscope/tree/v0.3.0/docs"
+Documentation = "https://github.com/satwiksps/scaffoldscope/tree/v0.3.1/docs"
 Repository = "https://github.com/satwiksps/scaffoldscope"
 Issues = "https://github.com/satwiksps/scaffoldscope/issues"
-Changelog = "https://github.com/satwiksps/scaffoldscope/blob/v0.3.0/CHANGELOG.md"
+Changelog = "https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
