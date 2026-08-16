@@ -6,9 +6,10 @@
 
 Controlled, paired ablations for coding-agent harnesses.
 
-[Website](https://scaffoldscope.vercel.app) · [Quickstart](#quickstart) · [What it measures](#what-it-measures) · [SWE-bench](#swe-bench) · [Documentation](#documentation)
+[Website](https://scaffoldscope.vercel.app) | [Quickstart](#quickstart) | [What it measures](#what-it-measures) | [SWE-bench](#swe-bench) | [Documentation](#documentation)
 
 [![CI](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml/badge.svg)](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/satwiksps/scaffoldscope/graph/badge.svg)](https://codecov.io/gh/satwiksps/scaffoldscope)
 [![PyPI](https://img.shields.io/pypi/v/scaffoldscope?logo=pypi&logoColor=white)](https://pypi.org/project/scaffoldscope/)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/pyproject.toml)
 [![License Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-6e9f18)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/LICENSE)
@@ -63,7 +64,7 @@ scaffoldscope demo
 
 | Capability | What ScaffoldScope does |
 |---|---|
-| Paired design | Can deterministically randomize treatment order inside each task × replicate block |
+| Paired design | Can deterministically randomize treatment order inside each task and replicate block |
 | Honest denominators | Keeps harness and protocol failures in intention-to-treat results while separating infrastructure-invalid trials |
 | Resume integrity | Hashes config, implementation, plugin code, task source, and runtime identity before reusing a trial |
 | Auditable context | Preserves the canonical trajectory; every derived view records retained and dropped source IDs |
@@ -212,7 +213,7 @@ scaffoldscope export-swebench-matrix runs/lite-ablation-abc12345 \
   --dataset-name SWE-bench/SWE-bench_Lite
 ```
 
-The matrix contains one prediction file and a unique evaluator run ID for every treatment × replicate cell, plus a pinned runbook and checksums. After official grading, attach each cell as an immutable overlay:
+The matrix contains one prediction file and a unique evaluator run ID for every treatment and replicate cell, plus a pinned runbook and checksums. After official grading, attach each cell as an immutable overlay:
 
 ```bash
 scaffoldscope ingest-swebench runs/lite-ablation-abc12345 official-results.json \
@@ -271,7 +272,6 @@ Read the [experiment-design contract](https://github.com/satwiksps/scaffoldscope
 - [Docker evaluator](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/docker.md)
 - [SWE-bench interoperability](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/swebench.md)
 - [Plugin API](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/extensions.md)
-- [Supported scope and limitations](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/SCOPE.md)
 - [Release process](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/docs/releasing.md)
 
 ## Contributing
@@ -282,6 +282,6 @@ Read [CONTRIBUTING.md](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/CO
 
 ## Maturity, license, and citation
 
-ScaffoldScope 0.3 is an alpha research instrument with a tested core evidence contract. It has not earned a 1.0 stability promise, and the project does not present its scripted demonstration as model-performance evidence. Review the [supported scope and limitations](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/SCOPE.md) before consequential use.
+ScaffoldScope 0.3 is an alpha research instrument with a tested core evidence contract. The scripted demo tests the workflow; it does not measure model performance.
 
 Apache-2.0. See [LICENSE](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/LICENSE) and [NOTICE](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/NOTICE). If ScaffoldScope supports published work, cite the archived release via [CITATION.cff](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/CITATION.cff) and include the config hash, evaluator revision, and evidence-bundle checksum.

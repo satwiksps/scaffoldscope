@@ -56,7 +56,6 @@ export const siteConfig = {
   project: {
     changelog: versionedRoot + "CHANGELOG.md",
     contributing: versionedRoot + "CONTRIBUTING.md",
-    scope: versionedRoot + "SCOPE.md",
     security: versionedRoot + "SECURITY.md",
   },
 } as const;

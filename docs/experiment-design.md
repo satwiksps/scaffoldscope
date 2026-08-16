@@ -48,10 +48,10 @@ The report also includes wins/losses/ties, a paired sign-flip diagnostic, a pros
 Small panels only detect large harness effects. An approximate paired-binary sample size is
 
 ```text
-N ≈ (z_critical + z_power)^2 × discordance / delta^2
+N is approximately (z_critical + z_power)^2 * discordance / delta^2
 ```
 
-With 50 tasks and 20% discordance, the 80%-power minimum detectable effect is roughly 18 percentage points. With 40% discordance it is roughly 25 points. A 2–3 point effect is not identifiable from such a panel, regardless of how polished the table looks.
+With 50 tasks and 20% discordance, the 80%-power minimum detectable effect is roughly 18 percentage points. With 40% discordance it is roughly 25 points. A 2 to 3 point effect is not identifiable from such a panel, regardless of how polished the table looks.
 
 Choose a deliberately non-saturated model and a task panel that actually creates context pressure. If fewer than half of non-control episodes compact, the study mostly measures policies while they are inactive.
 
@@ -91,7 +91,7 @@ Declare one primary comparison and the SESOI before the matrix. ScaffoldScope em
 - `practical_equivalence` when the full interval lies inside `[-SESOI, +SESOI]` and the prospective MDE is no larger than the SESOI.
 - `inconclusive` otherwise.
 
-Do not interpret “inconclusive” as “no effect.” If the prospective MDE exceeds the SESOI, the study was underpowered for the decision you wanted to make. Equivalence is interval-based; directional gain/loss claims additionally require the paired sign-flip diagnostic to reject at 0.05.
+Do not interpret "inconclusive" as "no effect." If the prospective MDE exceeds the SESOI, the study was underpowered for the decision you wanted to make. Equivalence is interval-based; directional gain/loss claims additionally require the paired sign-flip diagnostic to reject at 0.05.
 
 ## Release checklist
 

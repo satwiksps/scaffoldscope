@@ -1,7 +1,7 @@
 # Result bundle and schema
 
-Versioned evidence objects—manifest, plan row, event, per-trial result, analysis summary, external
-evaluation overlay, and bundle manifest—include `schema_version`. Resolved user configuration and
+Versioned evidence objects include the manifest, plan row, event, per-trial result, analysis summary,
+external evaluation overlay, and bundle manifest. They include `schema_version`. Resolved user configuration and
 the separately hashed pricing snapshot are provenance inputs rather than versioned evidence
 objects. The persisted experiment, plan, event, and per-trial result contracts remain at v1 and
 are append-only within a protocol release.

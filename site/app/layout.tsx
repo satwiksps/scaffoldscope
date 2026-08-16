@@ -9,12 +9,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: siteConfig.url,
-  title: {
-    default: "ScaffoldScope — Coding-agent harness ablations",
-    template: "%s · ScaffoldScope",
-  },
-  description:
-    "Hold the model, tasks, and budget constant. Compare coding-agent harness treatments with paired experiments and verifiable evidence.",
+  title: "ScaffoldScope",
+  description: "Paired experiments for coding-agent harnesses.",
   applicationName: siteConfig.name,
   authors: [{ name: "ScaffoldScope contributors" }],
   creator: "ScaffoldScope contributors",
@@ -33,16 +29,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "/",
-    title: "ScaffoldScope — Controlled harness ablations",
-    description:
-      "Paired experiments and verifiable evidence for coding-agent harnesses.",
+    title: "ScaffoldScope",
+    description: "Paired experiments for coding-agent harnesses.",
     siteName: siteConfig.name,
   },
   twitter: {
     card: "summary_large_image",
-    title: "ScaffoldScope — Controlled harness ablations",
-    description:
-      "Paired experiments and verifiable evidence for coding-agent harnesses.",
+    title: "ScaffoldScope",
+    description: "Paired experiments for coding-agent harnesses.",
   },
   category: "technology",
 };

@@ -2,8 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { siteConfig } from "@/lib/site";
 
-export const alt =
-  "ScaffoldScope — controlled experiments for coding-agent harnesses";
+export const alt = "ScaffoldScope";
 export const size = {
   width: 1200,
   height: 630,
@@ -69,7 +68,7 @@ export default function OpenGraphImage() {
               maxWidth: 1000,
             }}
           >
-            Controlled experiments for coding-agent harnesses.
+            Measure the harness.
           </div>
         </div>
         <div
@@ -83,7 +82,7 @@ export default function OpenGraphImage() {
             paddingTop: 28,
           }}
         >
-          <span>paired design · complete traces · verifiable evidence</span>
+          <span>Paired design. Complete traces. Verifiable evidence.</span>
           <span>v{siteConfig.version} alpha</span>
         </div>
       </div>

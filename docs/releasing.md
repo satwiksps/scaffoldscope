@@ -1,6 +1,6 @@
 # Releasing ScaffoldScope
 
-Releases are immutable research-instrument snapshots. A release includes source, wheel, source distribution, checksums, a GitHub Release, and—when trusted publishing is enabled—the same distributions on PyPI.
+Releases are research-instrument snapshots. A release includes source, wheel, source distribution, checksums, a GitHub Release, and the same distributions on PyPI.
 
 ## One-time repository setup
 
@@ -34,8 +34,8 @@ Releases are immutable research-instrument snapshots. A release includes source,
    npm run build
    ```
 
-5. Review the complete release diff on a clean `main`—normally through a release pull
-   request—and require all protected-branch checks to pass. Do not tag an unreviewed
+5. Review the complete release diff on a clean `main`, normally through a release pull
+   request, and require all protected-branch checks to pass. Do not tag an unreviewed
    working tree.
 6. Create a signed annotated tag on the exact current `main` commit, then push it:
 

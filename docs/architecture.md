@@ -12,7 +12,7 @@ ScaffoldScope separates the immutable evidence of an episode from the context vi
 6. A provider returns one text-JSON action; a restricted local or Docker backend executes the declared tool surface.
 7. The manifest-owned test command and deterministic constraints evaluate the final workspace.
 8. The runner writes the trace, patch, and result atomically, then rebuilds `episodes.jsonl`.
-9. The reporter analyzes complete paired blocks and resamples tasks—not flat episodes.
+9. The reporter analyzes complete paired blocks and resamples tasks, not flat episodes.
 
 ## Important boundaries
 

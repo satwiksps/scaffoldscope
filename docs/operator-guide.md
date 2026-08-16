@@ -81,7 +81,7 @@ scaffoldscope doctor --config experiment.json
 
 This reports the resolved config identity, a literal credential-readiness status
 (`configured`, `missing`, or `not-required`), sandbox backend, loaded plugin provenance,
-and—when Docker is selected—the locally resolved image identity. It never prints a
+and, when Docker is selected, the locally resolved image identity. It never prints a
 credential value or its environment-variable name.
 
 Before running untrusted repository tests, choose an isolated execution environment.

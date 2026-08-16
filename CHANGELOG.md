@@ -10,6 +10,8 @@ This file records user-visible changes to ScaffoldScope. The project follows
 
 - The README and project website now use the published PyPI package in their
   quickstart instructions.
+- Website copy and metadata are shorter. Social assets and Codecov reporting are
+  included.
 
 ## [0.3.1] - 2026-08-16
 

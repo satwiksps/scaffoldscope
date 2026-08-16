@@ -13,7 +13,6 @@ const project = [
   ["GitHub", siteConfig.repository],
   ["PyPI", siteConfig.pypi],
   ["Releases", siteConfig.repository + "/releases"],
-  ["Scope & limitations", siteConfig.project.scope],
   ["Contributing", siteConfig.project.contributing],
   ["Security", siteConfig.project.security],
 ] as const;
@@ -39,7 +38,7 @@ export function SiteFooter() {
             Controlled, paired ablations for coding-agent harnesses.
           </p>
           <p className="mt-6 text-xs text-dim">
-            Apache-2.0 · © 2026 ScaffoldScope contributors
+            Apache-2.0. Copyright 2026 ScaffoldScope contributors.
           </p>
         </div>
         <FooterList heading="Documentation" links={documentation} />

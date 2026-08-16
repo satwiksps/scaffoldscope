@@ -50,7 +50,7 @@ host paths into the evaluator image. ScaffoldScope does not add those mounts.
 
 On native Linux, bind mounts preserve host ownership. The safe default user, `65532:65532`, can
 usually read normal source files but cannot write directories owned by another UID. If a suite must
-build or write inside `/workspace`, configure a non-root UID:GID with appropriate permissions—for
+build or write inside `/workspace`, configure a non-root UID:GID with appropriate permissions. For
 example, the dedicated benchmark worker's UID:GID. Do not solve permission errors by switching to
 `0:0`; root users are rejected.
 
@@ -145,7 +145,7 @@ request:
 4. The observed record is hashed and compared with any existing experiment manifest.
 
 ScaffoldScope never pulls an image during a run. Pulling can change latency, consume network, and
-resolve a mutable tag differently across workers—all experimental confounds. Pre-pull or build the
+resolve a mutable tag differently across workers. These are experimental confounds. Pre-pull or build the
 image on every worker before starting the matrix.
 
 A plan-only manifest has `docker_runtime: null`. The first real run may fill that field only while no
@@ -188,7 +188,7 @@ infrastructure-validity semantics.
 
 ## Troubleshooting
 
-### “image is unavailable locally; ScaffoldScope never pulls”
+### "image is unavailable locally; ScaffoldScope never pulls"
 
 Pull the exact digest and platform before running:
 
@@ -199,7 +199,7 @@ docker image inspect ghcr.io/example/eval@sha256:<digest>
 
 Check that the same Docker context is active in the shell that launches ScaffoldScope.
 
-### “image platform is … but sandbox.docker.platform is …”
+### "image platform is ... but sandbox.docker.platform is ..."
 
 Build or pull the requested platform, or change the config before planning. Do not combine results
 from native and emulated platforms under one experiment identity.

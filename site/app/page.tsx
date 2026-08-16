@@ -121,7 +121,7 @@ export default function Home() {
                 </a>
               </div>
               <p className="mt-8 font-mono text-[11px] leading-6 text-dim">
-                Python 3.10+ · Zero runtime dependencies · Apache-2.0
+                Python 3.10+, no runtime dependencies, Apache-2.0
               </p>
             </div>
             <ProjectWindow />
@@ -146,16 +146,13 @@ export default function Home() {
                   context manager, retry policy, and budget together. That
                   produces a score without clean attribution. ScaffoldScope
                   turns harness choices into declared treatments inside paired
-                  task × replicate blocks.
+                  task and replicate blocks.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center gap-x-2 border-y border-line py-4 font-mono text-xs leading-6 text-muted">
-                  <span className="text-ink">same model</span>
-                  {"  +  "}
-                  <span className="text-ink">same tasks</span>
-                  {"  +  "}
-                  <span className="text-ink">same budget</span>
-                  {"  →  "}
-                  <span className="text-mint">one declared treatment</span>
+                  <span className="text-ink">
+                    Same model. Same tasks. Same budget.
+                  </span>{" "}
+                  <span className="text-mint">One declared treatment.</span>
                 </div>
               </div>
             </div>
@@ -197,7 +194,7 @@ export default function Home() {
                   className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-mint hover:text-mint-soft"
                   href={siteConfig.docs.configuration}
                 >
-                  Configuration reference →
+                  Configuration reference
                 </a>
               </div>
               <div className="overflow-hidden rounded-lg border border-line">
@@ -267,15 +264,9 @@ export default function Home() {
             </p>
             <div className="mt-10 rounded-lg border border-line bg-surface px-5 py-5">
               <p className="whitespace-normal font-mono text-xs leading-6 text-muted">
-                <span className="text-ink">config + tasks</span>
-                {"  →  "}
-                paired plan
-                {"  →  "}
-                agent + context policy
-                {"  →  "}
-                evaluator
-                {"  →  "}
-                <span className="text-mint">report + evidence bundle</span>
+                <span className="text-ink">Config and tasks.</span>{" "}
+                Paired plan. Agent and context policy. Evaluator.{" "}
+                <span className="text-mint">Report and evidence bundle.</span>
               </p>
             </div>
 
@@ -297,13 +288,13 @@ export default function Home() {
                     className="text-sm font-semibold text-mint hover:text-mint-soft"
                     href={siteConfig.docs.operator}
                   >
-                    Operator guide →
+                    Operator guide
                   </a>
                   <a
                     className="text-sm font-semibold text-mint hover:text-mint-soft"
                     href={siteConfig.docs.architecture}
                   >
-                    Architecture →
+                    Architecture
                   </a>
                 </div>
               </div>
@@ -354,7 +345,7 @@ export default function Home() {
                   className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-mint hover:text-mint-soft"
                   href={siteConfig.docs.results}
                 >
-                  Read the result schema →
+                  Read the result schema
                 </a>
               </div>
               <div>
@@ -386,7 +377,7 @@ export default function Home() {
                     className="mt-5 inline-flex text-sm font-semibold text-ink hover:text-mint"
                     href={siteConfig.docs.experimentDesign}
                   >
-                    Experiment-design contract →
+                    Experiment-design contract
                   </a>
                 </div>
                 <ul className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
@@ -412,7 +403,7 @@ export default function Home() {
                 Generate with ScaffoldScope. Grade with the official harness.
               </h2>
               <p className="mt-5 text-base leading-7 text-muted">
-                Import downloaded task rows, run every treatment × replicate
+                Import downloaded task rows, run every treatment and replicate
                 cell, and export a uniquely identified prediction file for each
                 cell. Official SWE-bench grading remains the correctness
                 authority; results return as immutable overlays.
@@ -421,7 +412,7 @@ export default function Home() {
                 className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-mint hover:text-mint-soft"
                 href={siteConfig.docs.swebench}
               >
-                SWE-bench workflow →
+                SWE-bench workflow
               </a>
             </article>
             <article className="border-t border-line-strong pt-7 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
@@ -433,21 +424,14 @@ export default function Home() {
                 Version {siteConfig.version} has a tested core evidence
                 contract, but it does not carry a 1.0 stability promise or an
                 adequately powered paid-model headline result. Use it to design
-                and audit experiments today, and review its supported scope
-                before consequential use.
+                and audit experiments today.
               </p>
               <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
                 <a
                   className="text-sm font-semibold text-mint hover:text-mint-soft"
-                  href={siteConfig.project.scope}
-                >
-                  Scope &amp; limitations →
-                </a>
-                <a
-                  className="text-sm font-semibold text-mint hover:text-mint-soft"
                   href={siteConfig.release}
                 >
-                  v{siteConfig.version} release →
+                  v{siteConfig.version} release
                 </a>
               </div>
             </article>

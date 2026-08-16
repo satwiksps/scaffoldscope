@@ -16,7 +16,7 @@ Copy this file into a study directory before pilot results are inspected. Replac
 - Primary comparison: `[one variant ID]`
 - Mechanism changed: `[one precise scaffold component]`
 - Mechanisms held fixed: `[model, prompt, tools, budgets, evaluator, retry policy, sandbox]`
-- Expected interaction risks: `[model × task × treatment interactions]`
+- Expected interaction risks: `[model by task by treatment interactions]`
 
 ## Outcomes
 

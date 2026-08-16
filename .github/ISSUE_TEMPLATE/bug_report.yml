@@ -13,7 +13,7 @@ body:
     attributes:
       label: ScaffoldScope version
       description: Output of `scaffoldscope --version`, or the commit SHA.
-      placeholder: scaffoldscope 0.3.0
+      placeholder: Paste the full scaffoldscope --version output
     validations:
       required: true
   - type: dropdown
