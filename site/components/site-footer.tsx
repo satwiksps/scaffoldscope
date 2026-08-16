@@ -11,6 +11,7 @@ const documentation = [
 
 const project = [
   ["GitHub", siteConfig.repository],
+  ["PyPI", siteConfig.pypi],
   ["Releases", siteConfig.repository + "/releases"],
   ["Scope & limitations", siteConfig.project.scope],
   ["Contributing", siteConfig.project.contributing],

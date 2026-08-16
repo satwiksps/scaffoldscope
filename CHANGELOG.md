@@ -6,7 +6,10 @@ This file records user-visible changes to ScaffoldScope. The project follows
 
 ## [Unreleased]
 
-No user-visible changes yet.
+### Changed
+
+- The README and project website now use the published PyPI package in their
+  quickstart instructions.
 
 ## [0.3.1] - 2026-08-16
 

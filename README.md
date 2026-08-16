@@ -9,6 +9,7 @@ Controlled, paired ablations for coding-agent harnesses.
 [Website](https://scaffoldscope.vercel.app) · [Quickstart](#quickstart) · [What it measures](#what-it-measures) · [SWE-bench](#swe-bench) · [Documentation](#documentation)
 
 [![CI](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml/badge.svg)](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/scaffoldscope?logo=pypi&logoColor=white)](https://pypi.org/project/scaffoldscope/)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/pyproject.toml)
 [![License Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-6e9f18)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/LICENSE)
 [![Runtime dependencies zero](https://img.shields.io/badge/runtime%20dependencies-0-12b886)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/pyproject.toml)
@@ -25,13 +26,13 @@ It is a readable Python agent, a reproducible experiment runner, and an evidence
 
 ScaffoldScope supports Python 3.10+ on Linux, macOS, and Windows.
 
-Install either a downloaded release wheel:
+Install from PyPI:
 
 ```bash
-python -m pip install ./scaffoldscope-0.3.1-py3-none-any.whl
+python -m pip install scaffoldscope
 ```
 
-or a source checkout:
+To work from source instead:
 
 ```bash
 git clone https://github.com/satwiksps/scaffoldscope.git

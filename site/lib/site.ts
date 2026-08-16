@@ -44,6 +44,7 @@ export const siteConfig = {
   url: resolveSiteUrl(),
   repository,
   release,
+  pypi: "https://pypi.org/project/scaffoldscope/",
   docs: {
     architecture: versionedRoot + "docs/architecture.md",
     configuration: versionedRoot + "docs/configuration.md",

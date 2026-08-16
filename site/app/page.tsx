@@ -311,12 +311,9 @@ export default function Home() {
                 <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-7 text-muted">
                   <code>
                     <span className="text-dim">$</span>{" "}
-                    <span className="text-ink">git clone</span>{" "}
-                    https://github.com/satwiksps/scaffoldscope.git{"\n"}
-                    <span className="text-dim">$</span>{" "}
-                    <span className="text-ink">cd</span> scaffoldscope{"\n"}
-                    <span className="text-dim">$</span>{" "}
-                    <span className="text-ink">python -m pip install .</span>
+                    <span className="text-ink">
+                      python -m pip install scaffoldscope
+                    </span>
                     {"\n\n"}
                     <span className="text-dim">$</span>{" "}
                     <span className="text-mint">scaffoldscope init</span>{" "}
