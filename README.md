@@ -6,7 +6,7 @@
 
 Controlled, paired ablations for coding-agent harnesses.
 
-[Website](https://scaffoldscope-azure.vercel.app) · [Quickstart](#quickstart) · [What it measures](#what-it-measures) · [SWE-bench](#swe-bench) · [Documentation](#documentation)
+[Website](https://scaffoldscope.vercel.app) · [Quickstart](#quickstart) · [What it measures](#what-it-measures) · [SWE-bench](#swe-bench) · [Documentation](#documentation)
 
 [![CI](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml/badge.svg)](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://github.com/satwiksps/scaffoldscope/blob/v0.3.0/pyproject.toml)

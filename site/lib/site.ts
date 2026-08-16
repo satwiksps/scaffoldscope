@@ -9,7 +9,7 @@ function resolveSiteUrl(): URL {
   const configured =
     process.env.SITE_URL ??
     process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-    "https://scaffoldscope-azure.vercel.app";
+    "https://scaffoldscope.vercel.app";
   const candidate = configured.includes("://")
     ? configured
     : "https://" + configured;

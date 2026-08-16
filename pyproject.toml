@@ -44,7 +44,7 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://scaffoldscope-azure.vercel.app"
+Homepage = "https://scaffoldscope.vercel.app"
 Documentation = "https://github.com/satwiksps/scaffoldscope/tree/v0.3.0/docs"
 Repository = "https://github.com/satwiksps/scaffoldscope"
 Issues = "https://github.com/satwiksps/scaffoldscope/issues"

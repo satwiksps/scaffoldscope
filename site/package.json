@@ -4,7 +4,7 @@
   "description": "The official ScaffoldScope project website.",
   "private": true,
   "license": "Apache-2.0",
-  "homepage": "https://scaffoldscope-azure.vercel.app",
+  "homepage": "https://scaffoldscope.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/satwiksps/scaffoldscope.git",

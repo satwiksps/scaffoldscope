@@ -43,7 +43,7 @@ npm run build
 
 On Vercel, the metadata layer reads `VERCEL_PROJECT_PRODUCTION_URL`. If neither
 variable is present, canonical metadata falls back to
-`https://scaffoldscope-azure.vercel.app`.
+`https://scaffoldscope.vercel.app`.
 
 ## Vercel deployment
 

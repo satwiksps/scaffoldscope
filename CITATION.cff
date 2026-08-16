@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use ScaffoldScope in published work, cite this release and report the experiment config hash and evidence-bundle checksum."
+type: software
+title: "ScaffoldScope"
+abstract: "A reproducible experiment harness for paired ablations of coding-agent scaffold mechanisms."
+authors:
+  - family-names: "Sahoo"
+    given-names: "Satwik Sai Prakash"
+version: "0.3.0"
+date-released: 2026-08-16
+license: Apache-2.0
+repository-code: "https://github.com/satwiksps/scaffoldscope"
+url: "https://scaffoldscope.vercel.app"
+keywords:
+  - coding agents
+  - agent harness
+  - evaluation
+  - ablation study
+  - context management
+  - reproducibility
