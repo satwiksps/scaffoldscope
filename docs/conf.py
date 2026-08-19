@@ -66,6 +66,9 @@ nitpick_ignore = [
     ("py:class", "scaffoldscope.plugins._EntryPoint"),
     ("py:class", "_PluginHandle"),
 ]
+nitpick_ignore_regex = [
+    (r"py:class", r"pathlib\..*\.Path"),
+]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
