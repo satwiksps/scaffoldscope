@@ -325,4 +325,3 @@ scaffoldscope ingest-swebench runs/lite-1a2b3c4d official-results.json \
 ```
 
 Overlays are keyed to the frozen experiment cell and never rewrite generation results. Re-ingestion must be byte-identical. Missing or incomplete evaluator outcomes remain explicit instead of becoming silent non-solves.
-

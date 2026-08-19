@@ -6,4 +6,3 @@ if "%SPHINXBUILD%" == "" set SPHINXBUILD=sphinx-build
 if errorlevel 1 exit /b 1
 
 popd
-

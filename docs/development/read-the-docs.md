@@ -95,4 +95,3 @@ Confirm the GitHub integration received the tag, refresh versions in the Read th
 ## Canonical URLs
 
 The root documentation URL is `https://scaffoldscope.readthedocs.io/`. Read the Docs supplies the canonical URL for each build through `READTHEDOCS_CANONICAL_URL`, and `docs/conf.py` uses it for Open Graph and canonical metadata. Repository, PyPI, README, and website links should point to the canonical documentation host rather than GitHub-rendered Markdown.
-

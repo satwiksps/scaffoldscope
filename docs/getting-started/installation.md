@@ -91,4 +91,3 @@ An upgrade does not alter existing experiment directories. Resume checks compare
 | Provider | Bundled scripted provider, OpenAI-compatible chat completions endpoint, or a plugin |
 
 If the command is not found after installation, confirm that the virtual environment is active and run `python -m scaffoldscope --version`. See [Troubleshooting](../troubleshooting.md) for platform-specific checks.
-

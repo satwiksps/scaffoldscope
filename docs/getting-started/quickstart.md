@@ -94,4 +94,3 @@ The starter demonstrates mechanics only. Its repeated scripted trajectories are 
 - Learn every lifecycle command in the [operator guide](../operator-guide.md).
 - Review field-level options in the [configuration reference](../configuration.md).
 - Read the [experiment-design contract](../experiment-design.md) before paying for a matrix.
-

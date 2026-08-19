@@ -107,4 +107,3 @@ After tuning, freeze a separate reporting panel. Do not inspect reporting failur
 ## 7. Interpret the report conservatively
 
 ScaffoldScope preserves solve failures and separates infrastructure-invalid cells. It cannot repair low statistical power, benchmark contamination, provider drift, or a saturated model. Read the [experiment-design contract](../experiment-design.md) before describing a difference as meaningful.
-

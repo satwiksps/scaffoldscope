@@ -91,4 +91,3 @@ Strict mode treats analysis warnings as errors. A small, scripted, incomplete, u
 ## Where should I report a bug or security issue?
 
 Use [GitHub Issues](https://github.com/satwiksps/scaffoldscope/issues) for reproducible non-sensitive defects. Follow [SECURITY.md](https://github.com/satwiksps/scaffoldscope/blob/main/SECURITY.md) for private vulnerability reporting.
-

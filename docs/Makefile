@@ -12,4 +12,3 @@ linkcheck:
 
 clean:
 	$(SPHINXBUILD) -M clean "$(SOURCEDIR)" "$(BUILDDIR)"
-

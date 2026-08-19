@@ -251,4 +251,3 @@ Before opening an issue, collect:
 - `scaffoldscope check` output for evidence problems.
 
 Do not post API keys, private source, full traces, or confidential evaluator output. Use the private process in [SECURITY.md](https://github.com/satwiksps/scaffoldscope/blob/main/SECURITY.md) for vulnerabilities.
-
