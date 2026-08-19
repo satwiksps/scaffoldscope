@@ -47,6 +47,21 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
+  - package-ecosystem: pip
+    directory: /docs
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:15"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 2
+    groups:
+      documentation:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(docs-deps)"
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

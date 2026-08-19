@@ -68,6 +68,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
+          python -m pip install -r docs/requirements.txt
+      - name: Build the documentation
+        run: python -m sphinx -W --keep-going -b html docs docs/_build/html
       - name: Verify the project website
         working-directory: site
         run: |
@@ -116,7 +119,12 @@ jobs:
           project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))[
               "project"
           ]
-          for label in ("Documentation", "Changelog"):
+          documentation = project["urls"]["Documentation"]
+          if documentation != "https://scaffoldscope.readthedocs.io/":
+              raise SystemExit(
+                  f"pyproject Documentation URL {documentation!r} is not canonical"
+              )
+          for label in ("Changelog",):
               url = project["urls"][label]
               if f"v{__version__}" not in url:
                   raise SystemExit(
@@ -163,7 +171,7 @@ jobs:
           rendered = (
               f"ScaffoldScope {__version__} is an immutable research-instrument snapshot.\n\n"
               f"{notes}\n\n"
-              f"Read the [documentation]({repository}/tree/v{__version__}/docs), "
+              f"Read the [documentation](https://scaffoldscope.readthedocs.io/), "
               f"verify downloads with `SHA256SUMS`, and report vulnerabilities through "
               f"[private vulnerability reporting]({repository}/security/advisories/new).\n"
           )

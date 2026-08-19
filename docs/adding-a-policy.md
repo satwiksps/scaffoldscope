@@ -1,6 +1,6 @@
 # Adding a context policy
 
-Use the public entry-point API for a separately distributed policy; start with [extensions.md](extensions.md) and the runnable [pinned-tail example](../examples/plugins/pinned-tail/README.md). Contribute a built-in only when its semantics belong in the long-term core protocol.
+Use the public entry-point API for a separately distributed policy; start with [extensions.md](extensions.md) and the runnable [pinned-tail example](https://github.com/satwiksps/scaffoldscope/tree/main/examples/plugins/pinned-tail). Contribute a built-in only when its semantics belong in the long-term core protocol.
 
 ## Contract
 

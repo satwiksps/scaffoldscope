@@ -6,11 +6,12 @@
 
 Controlled experiments for coding-agent harnesses.
 
-[Website](https://scaffoldscope.vercel.app) | [Install](#quickstart) | [How it works](#why-this-is-different) | [SWE-bench](#swe-bench) | [Documentation](#documentation)
+[Website](https://scaffoldscope.vercel.app) | [Documentation](https://scaffoldscope.readthedocs.io/) | [Install](#quickstart) | [How it works](#why-this-is-different) | [SWE-bench](#swe-bench)
 
 [![CI](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/satwiksps/scaffoldscope/actions/workflows/ci.yml?query=branch%3Amain)
 [![CodeQL](https://github.com/satwiksps/scaffoldscope/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/satwiksps/scaffoldscope/actions/workflows/codeql.yml?query=branch%3Amain)
 [![Codecov](https://codecov.io/gh/satwiksps/scaffoldscope/graph/badge.svg?branch=main)](https://codecov.io/gh/satwiksps/scaffoldscope)
+[![Documentation](https://readthedocs.org/projects/scaffoldscope/badge/?version=latest)](https://scaffoldscope.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/scaffoldscope?logo=pypi&logoColor=white)](https://pypi.org/project/scaffoldscope/)
 [![Python 3.10+](https://img.shields.io/pypi/pyversions/scaffoldscope?logo=python&logoColor=white)](https://pypi.org/project/scaffoldscope/)
 [![License Apache-2.0](https://img.shields.io/pypi/l/scaffoldscope)](https://github.com/satwiksps/scaffoldscope/blob/main/LICENSE)
@@ -221,7 +222,7 @@ Remote endpoints carrying a key must use HTTPS. Provider-specific adapters can b
 }
 ```
 
-The backend never pulls during a run. It preflights the exact local image, disables networking, runs as non-root, drops all capabilities, uses a read-only root, protects evaluator files, scrubs harness credentials, and applies CPU, memory, process, file-descriptor, output, and timeout limits. Read the [Docker threat model and setup guide](https://github.com/satwiksps/scaffoldscope/blob/main/docs/docker.md).
+The backend never pulls during a run. It preflights the exact local image, disables networking, runs as non-root, drops all capabilities, uses a read-only root, protects evaluator files, scrubs harness credentials, and applies CPU, memory, process, file-descriptor, output, and timeout limits. Read the [Docker threat model and setup guide](https://scaffoldscope.readthedocs.io/en/latest/docker.html).
 
 ## SWE-bench
 
@@ -248,7 +249,7 @@ scaffoldscope ingest-swebench runs/lite-ablation-abc12345 official-results.json 
   --image-set-digest <image-manifest-digest>
 ```
 
-See the [SWE-bench workflow](https://github.com/satwiksps/scaffoldscope/blob/main/docs/swebench.md) for cache hazards, evaluation commands, and interpretation limits.
+See the [SWE-bench workflow](https://scaffoldscope.readthedocs.io/en/latest/swebench.html) for cache hazards, evaluation commands, and interpretation limits.
 
 ## Extensions
 
@@ -259,7 +260,7 @@ scaffoldscope plugins
 scaffoldscope plugins --check
 ```
 
-Discovery is deterministic. Built-in names cannot be shadowed, compatibility ranges are checked, plugin options are passed through a typed request, and loaded implementation files are hashed into experiment identity. Start with the [extension contract](https://github.com/satwiksps/scaffoldscope/blob/main/docs/extensions.md) and the [standalone example plugin](https://github.com/satwiksps/scaffoldscope/tree/main/examples/plugins/pinned-tail).
+Discovery is deterministic. Built-in names cannot be shadowed, compatibility ranges are checked, plugin options are passed through a typed request, and loaded implementation files are hashed into experiment identity. Start with the [extension contract](https://scaffoldscope.readthedocs.io/en/latest/extensions.html) and the [standalone example plugin](https://github.com/satwiksps/scaffoldscope/tree/main/examples/plugins/pinned-tail).
 
 ## Reports and evidence
 
@@ -284,20 +285,19 @@ The deterministic evidence bundle excludes mutable workspaces, retains archived 
 - Provider model/fingerprint drift, duplicate trajectories, estimated usage, incomplete pairing, and low treatment exposure produce explicit warnings.
 - Absolute benchmark scores can be contaminated; the design supports relative within-model claims, not immunity from contamination.
 
-Read the [experiment-design contract](https://github.com/satwiksps/scaffoldscope/blob/main/docs/experiment-design.md) before spending API budget.
+Read the [experiment-design contract](https://scaffoldscope.readthedocs.io/en/latest/experiment-design.html) before spending API budget.
 
 ## Documentation
 
-- [Operator guide](https://github.com/satwiksps/scaffoldscope/blob/main/docs/operator-guide.md)
-- [Configuration reference](https://github.com/satwiksps/scaffoldscope/blob/main/docs/configuration.md)
-- [Architecture](https://github.com/satwiksps/scaffoldscope/blob/main/docs/architecture.md)
-- [Experiment design](https://github.com/satwiksps/scaffoldscope/blob/main/docs/experiment-design.md)
-- [Preregistration template](https://github.com/satwiksps/scaffoldscope/blob/main/docs/protocol-template.md)
-- [Result schema](https://github.com/satwiksps/scaffoldscope/blob/main/docs/results-schema.md)
-- [Docker evaluator](https://github.com/satwiksps/scaffoldscope/blob/main/docs/docker.md)
-- [SWE-bench interoperability](https://github.com/satwiksps/scaffoldscope/blob/main/docs/swebench.md)
-- [Plugin API](https://github.com/satwiksps/scaffoldscope/blob/main/docs/extensions.md)
-- [Release process](https://github.com/satwiksps/scaffoldscope/blob/main/docs/releasing.md)
+The complete, versioned manual is at [scaffoldscope.readthedocs.io](https://scaffoldscope.readthedocs.io/). Start with:
+
+- [Installation](https://scaffoldscope.readthedocs.io/en/latest/getting-started/installation.html)
+- [Zero-cost quickstart](https://scaffoldscope.readthedocs.io/en/latest/getting-started/quickstart.html)
+- [Your first real experiment](https://scaffoldscope.readthedocs.io/en/latest/getting-started/first-experiment.html)
+- [Operator guide](https://scaffoldscope.readthedocs.io/en/latest/operator-guide.html)
+- [CLI reference](https://scaffoldscope.readthedocs.io/en/latest/reference/cli.html)
+- [Configuration reference](https://scaffoldscope.readthedocs.io/en/latest/configuration.html)
+- [Troubleshooting](https://scaffoldscope.readthedocs.io/en/latest/troubleshooting.html)
 
 ## Contributing
 

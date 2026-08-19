@@ -82,7 +82,7 @@ is unavailable, it hashes the bounded source file containing the factory and lab
 not cover native libraries, data files, transitive dependencies, or ambient services.
 
 See the runnable package skeleton in
-[`examples/plugins/pinned-tail`](../examples/plugins/pinned-tail/README.md).
+[`examples/plugins/pinned-tail`](https://github.com/satwiksps/scaffoldscope/tree/main/examples/plugins/pinned-tail).
 
 ## Runtime selection and identity
 

@@ -4,6 +4,7 @@ const repository = "https://github.com/satwiksps/scaffoldscope";
 const version = packageMetadata.version;
 const release = repository + "/releases/tag/v" + version;
 const versionedRoot = repository + "/blob/v" + version + "/";
+const documentation = "https://scaffoldscope.readthedocs.io/en/latest/";
 
 function resolveSiteUrl(): URL {
   const configured =
@@ -46,12 +47,12 @@ export const siteConfig = {
   release,
   pypi: "https://pypi.org/project/scaffoldscope/",
   docs: {
-    architecture: versionedRoot + "docs/architecture.md",
-    configuration: versionedRoot + "docs/configuration.md",
-    experimentDesign: versionedRoot + "docs/experiment-design.md",
-    operator: versionedRoot + "docs/operator-guide.md",
-    results: versionedRoot + "docs/results-schema.md",
-    swebench: versionedRoot + "docs/swebench.md",
+    architecture: documentation + "architecture.html",
+    configuration: documentation + "configuration.html",
+    experimentDesign: documentation + "experiment-design.html",
+    operator: documentation + "operator-guide.html",
+    results: documentation + "results-schema.html",
+    swebench: documentation + "swebench.html",
   },
   project: {
     changelog: versionedRoot + "CHANGELOG.md",

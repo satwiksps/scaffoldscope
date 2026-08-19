@@ -1,0 +1,33 @@
+:root {
+  --color-brand-primary: #5e9cff;
+  --color-brand-content: #2f78df;
+  --sidebar-item-spacing-vertical: 0.45rem;
+}
+
+body {
+  font-variant-ligatures: contextual;
+}
+
+.sidebar-brand-text {
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.sidebar-logo {
+  max-width: 12rem;
+}
+
+.content table.docutils {
+  display: table;
+  width: 100%;
+}
+
+.sd-card {
+  border-radius: 0.55rem;
+  box-shadow: none;
+}
+
+.highlight pre {
+  border-radius: 0.45rem;
+}
+

@@ -11,6 +11,7 @@ coverage.xml
 htmlcov/
 .tox/
 .nox/
+docs/_build/
 
 # Environments and builds
 .venv/

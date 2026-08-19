@@ -8,13 +8,15 @@ Releases are research-instrument snapshots. A release includes source, wheel, so
 2. Create the protected `pypi` environment in GitHub.
 3. In PyPI, create a pending trusted publisher for owner `satwiksps`, repository `scaffoldscope`, workflow `release.yml`, and environment `pypi`.
 4. Enable the repository variable `PYPI_PUBLISH` only after the trusted publisher exists.
+5. Import the repository into Read the Docs with the official GitHub App, keep `main` as the
+   default branch, and use the repository's `.readthedocs.yaml` without dashboard overrides.
 
 ## Release checklist
 
 1. Start from a clean `main` after required CI has passed.
 2. Select a Semantic Version and update `src/scaffoldscope/__init__.py`, `CHANGELOG.md`,
    `CITATION.cff`, `site/package.json`, `site/package-lock.json`, versioned README links,
-   and versioned `pyproject.toml` project URLs together.
+   and the version-pinned changelog project URL together.
 3. Confirm the changelog contains migration and evidence-schema notes when semantics changed.
 4. Run the complete local gate:
 
@@ -27,6 +29,8 @@ Releases are research-instrument snapshots. A release includes source, wheel, so
    python -m pytest --cov=scaffoldscope --cov-report=term-missing
    python -m build
    python -m twine check --strict dist/*
+   python -m pip install -r docs/requirements.txt
+   python -m sphinx -W --keep-going -b html docs docs/_build/html
 
    cd site
    npm ci --ignore-scripts
@@ -53,5 +57,8 @@ Releases are research-instrument snapshots. A release includes source, wheel, so
 8. Verify each GitHub artifact against `SHA256SUMS` and run the installed-wheel smoke test
    from the public artifact. When PyPI publishing is enabled, also verify that its files have
    the same SHA-256 digests.
+9. In Read the Docs, activate the new `vX.Y.Z` tag after its build passes. Point the documented
+   stable version at that release, keep `latest` on `main`, and verify the version switcher,
+   PDF, and HTML ZIP downloads.
 
 Never move, delete, or reuse a published tag. If a release is wrong, document it and publish a new patch version.

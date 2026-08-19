@@ -63,6 +63,8 @@ python -m mypy --platform darwin
 python -m pytest --cov=scaffoldscope --cov-report=term-missing
 python -m build
 python -m twine check --strict dist/*
+python -m pip install -r docs/requirements.txt
+python -m sphinx -W --keep-going -b html docs docs/_build/html
 npm --prefix site run check
 npm --prefix site run build
 ```
