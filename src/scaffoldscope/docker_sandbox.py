@@ -14,6 +14,7 @@ runtime configuration.  Prefer a rootless daemon or a disposable worker VM.
 
 from __future__ import annotations
 
+import json
 import math
 import os
 import re
@@ -429,8 +430,6 @@ def docker_preflight(config: DockerSandboxConfig) -> dict[str, str]:
                 config.docker_binary,
                 "image",
                 "inspect",
-                "--format",
-                "{{.Id}}\t{{.Os}}\t{{.Architecture}}\t{{.Variant}}",
                 config.image,
             ],
             stdin=subprocess.DEVNULL,
@@ -450,10 +449,24 @@ def docker_preflight(config: DockerSandboxConfig) -> dict[str, str]:
             "Docker evaluator image is unavailable locally; ScaffoldScope never pulls "
             f"during a run ({config.image!r}): {detail or 'docker image inspect failed'}"
         )
-    fields = completed.stdout.rstrip("\r\n").split("\t")
-    if len(fields) != 4:
+    try:
+        records = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise ConfigError("Docker image inspect returned invalid JSON") from exc
+    if not isinstance(records, list) or len(records) != 1 or not isinstance(records[0], dict):
         raise ConfigError("Docker image inspect returned an invalid provenance record")
-    image_id, image_os, architecture, variant = fields
+    record = records[0]
+    image_id = record.get("Id")
+    image_os = record.get("Os")
+    architecture = record.get("Architecture")
+    variant = record.get("Variant", "")
+    if (
+        not isinstance(image_id, str)
+        or not isinstance(image_os, str)
+        or not isinstance(architecture, str)
+        or not isinstance(variant, str)
+    ):
+        raise ConfigError("Docker image inspect returned an invalid provenance record")
     if _DIGEST_IMAGE.fullmatch(image_id) is None:
         raise ConfigError("Docker image inspect returned no immutable sha256 image ID")
     if not image_os or not architecture:

@@ -32,6 +32,8 @@ This file records user-visible changes to ScaffoldScope. The project follows
 - Trial workspaces and temporary homes are removed after execution. Missing-path
   CLI failures no longer leave locks or marker files.
 - CLI output remains readable under restricted Windows encodings.
+- Docker preflight accepts standard image metadata when the optional architecture
+  variant field is absent.
 
 ### Migration
 
