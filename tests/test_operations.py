@@ -5,11 +5,158 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scaffoldscope.operations import budget_estimate, experiment_status
+from scaffoldscope.errors import ConfigError
+from scaffoldscope.operations import budget_estimate, experiment_status, trial_inventory
 from scaffoldscope.schema import RunConfig
+
+DEMO_CONFIG = (
+    Path(__file__).resolve().parents[1] / "src" / "scaffoldscope" / "demo" / "experiment.json"
+)
 
 
 class OperationsTests(unittest.TestCase):
+    def test_trial_inventory_rejects_unknown_filters_instead_of_silent_empty_success(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            experiment = Path(temporary) / "run"
+            experiment.mkdir()
+            (experiment / "manifest.json").write_text(
+                json.dumps({"config_hash": "abc"}), encoding="utf-8"
+            )
+            (experiment / "plan.jsonl").write_text(
+                json.dumps(
+                    {
+                        "trial_id": "trial-a",
+                        "trial_hash": "hash-a",
+                        "task_id": "task-a",
+                        "variant_id": "none",
+                        "replicate": 1,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(len(trial_inventory(experiment)), 1)
+            for filters in (
+                {"status": "typo"},
+                {"variant": "typo"},
+                {"task": "typo"},
+            ):
+                with (
+                    self.subTest(filters=filters),
+                    self.assertRaisesRegex(ConfigError, "Unknown .* filter"),
+                ):
+                    trial_inventory(experiment, **filters)
+
+    def test_trial_inventory_applies_combined_status_variant_and_task_filters(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            experiment = Path(temporary) / "run"
+            (experiment / "trials" / "trial-a").mkdir(parents=True)
+            (experiment / "trials" / "trial-b").mkdir(parents=True)
+            (experiment / "manifest.json").write_text(
+                json.dumps({"config_hash": "abc"}), encoding="utf-8"
+            )
+            plan = [
+                {
+                    "trial_id": "trial-a",
+                    "trial_hash": "hash-a",
+                    "task_id": "task-a",
+                    "variant_id": "none",
+                    "replicate": 1,
+                },
+                {
+                    "trial_id": "trial-b",
+                    "trial_hash": "hash-b",
+                    "task_id": "task-b",
+                    "variant_id": "selective",
+                    "replicate": 1,
+                },
+            ]
+            (experiment / "plan.jsonl").write_text(
+                "".join(json.dumps(row) + "\n" for row in plan), encoding="utf-8"
+            )
+            for row, status in zip(plan, ("resolved", "unresolved"), strict=True):
+                (experiment / "trials" / row["trial_id"] / "result.json").write_text(
+                    json.dumps({**row, "config_hash": "abc", "status": status}),
+                    encoding="utf-8",
+                )
+
+            rows = trial_inventory(
+                experiment,
+                status="resolved",
+                variant="none",
+                task="task-a",
+            )
+
+            self.assertEqual([row["trial_id"] for row in rows], ["trial-a"])
+            self.assertEqual(
+                trial_inventory(
+                    experiment,
+                    status="resolved",
+                    variant="selective",
+                    task="task-a",
+                ),
+                [],
+            )
+
+    def test_status_and_inventory_reject_malformed_identity_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            malformed = root / "malformed"
+            malformed.mkdir()
+            (malformed / "manifest.json").write_text("[]", encoding="utf-8")
+            (malformed / "plan.jsonl").write_text("", encoding="utf-8")
+            with self.assertRaisesRegex(ConfigError, "manifest must be a JSON object"):
+                trial_inventory(malformed)
+
+            unsafe = root / "unsafe"
+            unsafe.mkdir()
+            (unsafe / "manifest.json").write_text(
+                json.dumps({"config_hash": "abc", "variants": ["none"]}),
+                encoding="utf-8",
+            )
+            (unsafe / "plan.jsonl").write_text(
+                json.dumps(
+                    {
+                        "trial_id": "../escape",
+                        "trial_hash": "hash",
+                        "task_id": "task-a",
+                        "variant_id": "none",
+                        "replicate": 1,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ConfigError, "unsafe trial id"):
+                trial_inventory(unsafe)
+
+            invalid = root / "invalid-result"
+            (invalid / "trials" / "trial-a").mkdir(parents=True)
+            (invalid / "manifest.json").write_text(
+                json.dumps({"config_hash": "abc", "variants": ["none"]}),
+                encoding="utf-8",
+            )
+            plan = {
+                "trial_id": "trial-a",
+                "trial_hash": "hash-a",
+                "task_id": "task-a",
+                "variant_id": "none",
+                "replicate": 1,
+            }
+            (invalid / "plan.jsonl").write_text(json.dumps(plan) + "\n", encoding="utf-8")
+            (invalid / "trials" / "trial-a" / "result.json").write_text(
+                json.dumps({**plan, "config_hash": "wrong", "status": "resolved"}),
+                encoding="utf-8",
+            )
+
+            self.assertEqual(trial_inventory(invalid)[0]["status"], "invalid_result")
+            status = experiment_status(invalid)
+            self.assertEqual(status["completed_trials"], 0)
+            self.assertEqual(status["malformed_result_trials"], ["trial-a"])
+
     def test_status_reads_durable_trials_instead_of_aggregate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -128,6 +275,50 @@ class OperationsTests(unittest.TestCase):
             self.assertEqual(
                 {warning["code"] for warning in estimate["warnings"]},
                 {"LOW_TASK_COUNT", "SEED_UNCONFIRMED"},
+            )
+
+    def test_budget_estimate_distinguishes_caps_cache_prices_and_unbounded_cost(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = json.loads(DEMO_CONFIG.read_text(encoding="utf-8"))
+            base["tasks"]["manifest"] = str(DEMO_CONFIG.with_name("tasks.jsonl"))
+            base["experiment"]["output_dir"] = str(root / "runs")
+
+            capped = json.loads(json.dumps(base))
+            capped["agent"]["max_cost_usd"] = 1.25
+            capped_path = root / "capped.json"
+            capped_path.write_text(json.dumps(capped), encoding="utf-8")
+            capped_estimate = budget_estimate(RunConfig.load(capped_path))
+            self.assertEqual(capped_estimate["maximum_configured_cost_usd"], 15.0)
+            self.assertEqual(
+                capped_estimate["cost_bound_basis"],
+                "sum of configured hard per-trial cost caps",
+            )
+
+            cached = json.loads(json.dumps(base))
+            cached["model"].update(
+                {
+                    "input_price_per_million": 1.0,
+                    "output_price_per_million": 2.0,
+                    "cache_read_price_per_million": 3.0,
+                    "cache_write_price_per_million": 4.0,
+                }
+            )
+            cached_path = root / "cached.json"
+            cached_path.write_text(json.dumps(cached), encoding="utf-8")
+            cached_estimate = budget_estimate(RunConfig.load(cached_path))
+            self.assertEqual(cached_estimate["maximum_configured_cost_usd"], 0.96)
+
+            unbounded = json.loads(json.dumps(base))
+            unbounded["model"]["input_price_per_million"] = None
+            unbounded["model"]["output_price_per_million"] = None
+            unbounded_path = root / "unbounded.json"
+            unbounded_path.write_text(json.dumps(unbounded), encoding="utf-8")
+            unbounded_estimate = budget_estimate(RunConfig.load(unbounded_path))
+            self.assertIsNone(unbounded_estimate["maximum_configured_cost_usd"])
+            self.assertIn(
+                "COST_UNBOUNDED",
+                {warning["code"] for warning in unbounded_estimate["warnings"]},
             )
 
 

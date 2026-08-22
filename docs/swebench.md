@@ -53,6 +53,10 @@ scaffoldscope export-swebench-matrix runs/context-lite-abc12345 \
 
 The destination must be outside the experiment and absent or empty. ScaffoldScope validates every cell before writing it, then creates prediction files, SHA-256 digests, a `matrix.json` identity manifest, unique evaluator run IDs, and an `evaluate.sh` runbook. Inspect and pin the evaluator environment before executing the runbook.
 
+`evaluate.sh` requires a POSIX shell. On Windows, execute it under WSL/Linux or invoke the
+equivalent official evaluator commands manually; ScaffoldScope does not generate a PowerShell
+runbook.
+
 After the official harness finishes, pass its aggregate JSON report (the object with
 `resolved_ids`, `unresolved_ids`, and related buckets) or a supported per-instance
 JSON/JSONL export to ScaffoldScope as an immutable overlay. Output filenames vary by

@@ -55,7 +55,7 @@ This command does not call a model, execute tests, or inspect Docker images.
 
 ## `doctor`
 
-Inspect package or experiment-specific readiness without running a trial.
+Check package or experiment-specific local prerequisites without running a trial.
 
 ```{program-output} python -m scaffoldscope doctor --help
 ```
@@ -65,7 +65,7 @@ scaffoldscope doctor
 scaffoldscope doctor --config experiment.json
 ```
 
-With `--config`, the command resolves the provider, reports credential readiness without exposing the secret or variable name, validates selected plugins, and preflights the Docker image when the Docker backend is selected.
+With `--config`, the command resolves the provider, reports credential presence without exposing the secret or variable name, validates selected plugins, and preflights the Docker image when selected. It does not contact model endpoints; the JSON output reports provider connectivity as `not-checked`.
 
 ## `schema`
 
@@ -294,7 +294,7 @@ The output contains `instance_id`, `model_name_or_path`, and `model_patch`.
 
 ## `export-swebench-matrix`
 
-Export every treatment and replicate cell, unique evaluator run IDs, checksums, matrix identity, and a pinned runbook.
+Export every treatment and replicate cell, unique evaluator run IDs, checksums, matrix identity, and a generated runbook. The operator must separately pin the evaluator installation and images used to execute it.
 
 ```{program-output} python -m scaffoldscope export-swebench-matrix --help
 ```

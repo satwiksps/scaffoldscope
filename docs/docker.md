@@ -41,7 +41,7 @@ host paths into the evaluator image. ScaffoldScope does not add those mounts.
 
 ## Prerequisites
 
-- Python 3.10 or newer and a working Docker Engine or Docker Desktop CLI.
+- Python 3.10 through 3.14 and a working Docker Engine or Docker Desktop CLI.
 - Linux-container mode. The default evaluator platform is `linux/amd64`.
 - A locally available image containing the task's interpreter, test runner, and dependencies.
 - Enough Docker CPU, memory, disk, and concurrent-container capacity for `experiment.max_workers`.

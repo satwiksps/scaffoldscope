@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import os
 import shutil
+import socket
 import stat
 import subprocess
 import tempfile
-import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from scaffoldscope.errors import SandboxError
+from scaffoldscope.locking import _lock, _unlock
 from scaffoldscope.sandbox import EvaluationResult, LocalSandbox, RestrictedSandbox
 from scaffoldscope.schema import ConstraintSpec, SandboxConfig, TaskSpec
 
@@ -100,17 +101,31 @@ class SandboxTests(unittest.TestCase):
             """\
 import subprocess
 import sys
-import time
+import threading
 
 child = '''\
 from pathlib import Path
-import time
-Path("descendant-ready").write_text("ready", encoding="utf-8")
-time.sleep(2)
-Path("descendant-survived").write_text("bad", encoding="utf-8")
+import socket
+import sys
+
+listener = socket.socket()
+listener.bind(("127.0.0.1", 0))
+listener.listen(1)
+lock_handle = open("descendant.lock", "w+b")
+lock_handle.write(b"x")
+lock_handle.flush()
+lock_handle.seek(0)
+if sys.platform == "win32":
+    import msvcrt
+    msvcrt.locking(lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
+else:
+    import fcntl
+    fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+Path("descendant-ready").write_text(str(listener.getsockname()[1]), encoding="utf-8")
+listener.accept()
 '''
 subprocess.Popen([sys.executable, "-c", child])
-time.sleep(30)
+threading.Event().wait()
 """,
             encoding="utf-8",
         )
@@ -132,9 +147,20 @@ time.sleep(30)
         self.assertFalse(evaluation.passed)
         self.assertIsNone(evaluation.returncode)
         self.assertIn("timed out", evaluation.output)
-        self.assertTrue((self.root / "descendant-ready").is_file())
-        time.sleep(1.25)
-        self.assertFalse((self.root / "descendant-survived").exists())
+        ready_path = self.root / "descendant-ready"
+        self.assertTrue(ready_path.is_file())
+        descendant_port = int(ready_path.read_text(encoding="utf-8"))
+        try:
+            with (self.root / "descendant.lock").open("r+b") as lock_handle:
+                _lock(lock_handle)
+                _unlock(lock_handle)
+        except BaseException:
+            try:
+                with socket.create_connection(("127.0.0.1", descendant_port), timeout=1.0):
+                    pass
+            except OSError:
+                pass
+            raise
 
     def test_protected_directory_is_immutable_and_audited(self) -> None:
         tests_dir = self.root / "tests"
@@ -305,6 +331,160 @@ time.sleep(30)
         self.assertTrue(created.ok)
         self.assertEqual(stat.S_IMODE((self.root / "created.py").stat().st_mode), 0o644)
         self.assertIn("new file mode 100644", self.sandbox.patch())
+
+
+class SandboxDiscoveryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.task = TaskSpec(
+            id="discovery-task",
+            workspace=self.root,
+            problem="Inspect the workspace.",
+            constraints=(),
+            test_command=(),
+        )
+        self.sandbox = LocalSandbox(
+            self.root,
+            self.task,
+            SandboxConfig(max_file_bytes=64),
+        )
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def _write_text(self, relative: str, content: str) -> Path:
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return path
+
+    def test_list_files_sorts_limits_and_keeps_root_relative_nested_paths(self) -> None:
+        self._write_text("zeta.txt", "z\n")
+        self._write_text("alpha.txt", "a\n")
+        self._write_text("nested/zeta.txt", "nested z\n")
+        self._write_text("nested/alpha.txt", "nested a\n")
+        self._write_text(".git/config", "hidden\n")
+        (self.root / "asset.bin").write_bytes(b"\x00\xff")
+        (self.root / "oversized.dat").write_bytes(b"x" * 65)
+
+        listed = self.sandbox.invoke("list_files", {"path": "."})
+
+        self.assertTrue(listed.ok)
+        self.assertEqual(
+            listed.content.splitlines(),
+            [
+                "alpha.txt",
+                "asset.bin",
+                "nested/alpha.txt",
+                "nested/zeta.txt",
+                "oversized.dat",
+                "zeta.txt",
+            ],
+        )
+        self.assertEqual(listed.metadata["count"], 6)
+        self.assertEqual(listed.metadata["limit"], 200)
+        self.assertNotIn(".git", listed.content)
+
+        limited = self.sandbox.invoke("list_files", {"path": ".", "limit": 2})
+        self.assertTrue(limited.ok)
+        self.assertEqual(limited.content.splitlines(), ["alpha.txt", "asset.bin"])
+        self.assertEqual(limited.metadata["count"], 2)
+        self.assertEqual(limited.metadata["limit"], 2)
+
+        nested = self.sandbox.invoke("list_files", {"path": "nested"})
+        self.assertTrue(nested.ok)
+        self.assertEqual(
+            nested.content.splitlines(),
+            ["nested/alpha.txt", "nested/zeta.txt"],
+        )
+
+    def test_search_sorts_limits_honors_case_and_skips_ignored_or_oversized_files(self) -> None:
+        self._write_text("a-search.txt", "Needle Alpha\nneedle beta\n")
+        self._write_text("nested/b-search.txt", "NEEDLE nested\n")
+        self._write_text(".git/config", "needle hidden\n")
+        (self.root / "z-binary.bin").write_bytes(b"\xffBINARY_MARKER\x00\n")
+        self._write_text("zz-oversized.txt", "OVERSIZED_MARKER" + "x" * 64)
+
+        insensitive = self.sandbox.invoke(
+            "search",
+            {"path": ".", "query": "needle", "case_sensitive": False},
+        )
+
+        self.assertTrue(insensitive.ok)
+        self.assertEqual(
+            insensitive.content.splitlines(),
+            [
+                "a-search.txt:1:Needle Alpha",
+                "a-search.txt:2:needle beta",
+                "nested/b-search.txt:1:NEEDLE nested",
+            ],
+        )
+        self.assertEqual(insensitive.metadata["count"], 3)
+        self.assertNotIn(".git", insensitive.content)
+
+        sensitive = self.sandbox.invoke(
+            "search",
+            {"path": ".", "query": "needle", "case_sensitive": True},
+        )
+        self.assertTrue(sensitive.ok)
+        self.assertEqual(sensitive.content, "a-search.txt:2:needle beta")
+
+        limited = self.sandbox.invoke(
+            "search",
+            {"path": ".", "query": "needle", "max_results": 2},
+        )
+        self.assertTrue(limited.ok)
+        self.assertEqual(
+            limited.content.splitlines(),
+            ["a-search.txt:1:Needle Alpha", "a-search.txt:2:needle beta"],
+        )
+        self.assertEqual(limited.metadata["count"], 2)
+        self.assertEqual(limited.metadata["limit"], 2)
+
+        nested = self.sandbox.invoke(
+            "search",
+            {"path": "nested", "query": "needle"},
+        )
+        self.assertTrue(nested.ok)
+        self.assertEqual(nested.content, "nested/b-search.txt:1:NEEDLE nested")
+
+        binary = self.sandbox.invoke(
+            "search",
+            {"path": ".", "query": "BINARY_MARKER", "case_sensitive": True},
+        )
+        self.assertTrue(binary.ok)
+        self.assertEqual(binary.metadata["count"], 1)
+        self.assertTrue(binary.content.startswith("z-binary.bin:1:"))
+        self.assertIn("BINARY_MARKER", binary.content)
+
+        oversized = self.sandbox.invoke(
+            "search",
+            {"path": ".", "query": "OVERSIZED_MARKER", "case_sensitive": True},
+        )
+        self.assertTrue(oversized.ok)
+        self.assertEqual(oversized.content, "")
+        self.assertEqual(oversized.metadata["count"], 0)
+
+    def test_list_and_search_ignore_symlinked_files_when_supported(self) -> None:
+        target = self._write_text("target.txt", "SYMLINK_MARKER\n")
+        link = self.root / "link.txt"
+        try:
+            link.symlink_to(target)
+        except (NotImplementedError, OSError) as exc:
+            self.skipTest(f"file symlinks are unavailable: {exc}")
+
+        listed = self.sandbox.invoke("list_files", {"path": "."})
+        searched = self.sandbox.invoke(
+            "search",
+            {"path": ".", "query": "SYMLINK_MARKER", "case_sensitive": True},
+        )
+
+        self.assertTrue(listed.ok)
+        self.assertEqual(listed.content.splitlines(), ["target.txt"])
+        self.assertTrue(searched.ok)
+        self.assertEqual(searched.content, "target.txt:1:SYMLINK_MARKER")
+        self.assertNotIn("link.txt", searched.content)
 
 
 if __name__ == "__main__":

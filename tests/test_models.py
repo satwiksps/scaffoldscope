@@ -3,9 +3,12 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
+import threading
 import unittest
 import urllib.error
 import urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 from unittest.mock import patch
 
@@ -50,6 +53,62 @@ class _Response:
 
     def read(self) -> bytes:
         return json.dumps(self.payload).encode("utf-8")
+
+
+class _LocalProvider:
+    def __init__(
+        self,
+        responses: list[tuple[int, bytes, dict[str, str]]],
+    ) -> None:
+        self.responses = list(responses)
+        self.requests: list[dict[str, Any]] = []
+        owner = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self) -> None:
+                length = int(self.headers.get("Content-Length", "0"))
+                owner.requests.append(
+                    {
+                        "method": self.command,
+                        "path": self.path,
+                        "headers": {key.lower(): value for key, value in self.headers.items()},
+                        "body": self.rfile.read(length),
+                    }
+                )
+                if owner.responses:
+                    status, body, headers = owner.responses.pop(0)
+                else:
+                    status, body, headers = 500, b"unexpected request", {}
+                self.send_response(status)
+                for key, value in headers.items():
+                    self.send_header(key, value)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, _format: str, *_args: object) -> None:
+                return None
+
+        self.server = HTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+
+    @property
+    def base_url(self) -> str:
+        host, port = self.server.server_address
+        return f"http://{host}:{port}"
+
+    def __enter__(self) -> _LocalProvider:
+        self.thread.start()
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+
+
+def _json_body(value: dict[str, Any]) -> bytes:
+    return json.dumps(value, ensure_ascii=False).encode("utf-8")
 
 
 class ModelAdapterTests(unittest.TestCase):
@@ -111,6 +170,256 @@ class ModelAdapterTests(unittest.TestCase):
         self.assertEqual(response.usage.cache_write_tokens, 10)
         self.assertEqual(response.raw_metadata["system_fingerprint"], "fp-abc")
         self.assertAlmostEqual(estimate_cost(_config(), response.usage) or 0.0, 0.000099)
+
+    def test_local_http_request_encoding_and_response_parsing(self) -> None:
+        messages = [
+            {"role": "system", "content": "Preserve café and Ω."},
+            {"role": "user", "content": "Return JSON."},
+        ]
+        provider_payload = {
+            "id": "body-response-id",
+            "model": "effective-loopback-model",
+            "system_fingerprint": "fp-loopback",
+            "choices": [
+                {
+                    "message": {
+                        "content": [
+                            {"type": "text", "text": '{"final":"café'},
+                            {"type": "text", "text": ' Ω"}'},
+                        ]
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 12,
+                "completion_tokens": 3,
+                "prompt_tokens_details": {"cached_tokens": 2, "cache_write_tokens": 1},
+                "completion_tokens_details": {"reasoning_tokens": 1},
+            },
+        }
+        with _LocalProvider(
+            [
+                (
+                    200,
+                    _json_body(provider_payload),
+                    {"Content-Type": "application/json", "x-request-id": "req-loopback"},
+                )
+            ]
+        ) as provider:
+            model = OpenAICompatibleModel(
+                _config(base_url=f"{provider.base_url}/v1", timeout_seconds=2.0),
+                Char4TokenCounter(),
+            )
+            response = model.complete(
+                messages,
+                seed=1729,
+                max_output_tokens=64,
+                temperature=0.25,
+            )
+
+        self.assertEqual(len(provider.requests), 1)
+        recorded = provider.requests[0]
+        self.assertEqual(recorded["method"], "POST")
+        self.assertEqual(recorded["path"], "/v1/chat/completions")
+        self.assertEqual(recorded["headers"]["content-type"], "application/json")
+        self.assertEqual(
+            recorded["headers"]["authorization"],
+            "Bearer unit-test-secret-token",
+        )
+        self.assertTrue(recorded["headers"]["user-agent"].startswith("scaffoldscope/"))
+        raw_body = recorded["body"]
+        self.assertIn("café".encode(), raw_body)
+        self.assertNotIn(b"\\u00e9", raw_body)
+        self.assertEqual(
+            json.loads(raw_body),
+            {
+                "model": "model-revision-2026-08-15",
+                "messages": messages,
+                "temperature": 0.25,
+                "max_tokens": 64,
+                "seed": 1729,
+                "response_format": {"type": "json_object"},
+            },
+        )
+        self.assertEqual(response.content, '{"final":"café Ω"}')
+        self.assertEqual(response.request_id, "req-loopback")
+        self.assertEqual(response.provider_model, "effective-loopback-model")
+        self.assertEqual(response.finish_reason, "stop")
+        self.assertEqual(response.usage.input_tokens, 12)
+        self.assertEqual(response.usage.output_tokens, 3)
+        self.assertEqual(response.usage.cache_read_tokens, 2)
+        self.assertEqual(response.usage.cache_write_tokens, 1)
+        self.assertEqual(response.usage.reasoning_tokens, 1)
+        self.assertEqual(response.raw_metadata["system_fingerprint"], "fp-loopback")
+
+    def test_local_http_error_is_non_retryable_and_redacted(self) -> None:
+        events: list[dict[str, Any]] = []
+        with _LocalProvider(
+            [
+                (
+                    400,
+                    b"api_key=unit-test-secret-token",
+                    {"Content-Type": "text/plain"},
+                )
+            ]
+        ) as provider:
+            model = OpenAICompatibleModel(
+                _config(base_url=provider.base_url, retries=2, timeout_seconds=2.0),
+                Char4TokenCounter(),
+                events.append,
+            )
+            with self.assertRaises(ModelError) as raised:
+                model.complete(
+                    self.messages,
+                    seed=1,
+                    max_output_tokens=32,
+                    temperature=0.0,
+                )
+
+        self.assertEqual(len(provider.requests), 1)
+        self.assertIn("Provider returned HTTP 400", str(raised.exception))
+        self.assertNotIn("unit-test-secret-token", str(raised.exception))
+        self.assertIn("[REDACTED]", str(raised.exception))
+        self.assertEqual(len(events), 1)
+        self.assertFalse(events[0]["retrying"])
+        self.assertEqual(events[0]["error_type"], "ModelError")
+
+    def test_local_http_malformed_json_is_reported(self) -> None:
+        events: list[dict[str, Any]] = []
+        with _LocalProvider(
+            [(200, b'{"choices":[', {"Content-Type": "application/json"})]
+        ) as provider:
+            model = OpenAICompatibleModel(
+                _config(base_url=provider.base_url, timeout_seconds=2.0),
+                Char4TokenCounter(),
+                events.append,
+            )
+            with self.assertRaises(ModelError) as raised:
+                model.complete(
+                    self.messages,
+                    seed=1,
+                    max_output_tokens=32,
+                    temperature=0.0,
+                )
+
+        self.assertEqual(len(provider.requests), 1)
+        self.assertIn("after 1 attempt", str(raised.exception))
+        self.assertEqual(len(events), 1)
+        self.assertFalse(events[0]["retrying"])
+        self.assertEqual(events[0]["error_type"], "JSONDecodeError")
+
+    def test_content_list_and_none_are_normalized(self) -> None:
+        model = OpenAICompatibleModel(_config(), Char4TokenCounter())
+        cases = [
+            (
+                "content parts",
+                [{"type": "text", "text": "alpha"}, {"type": "text", "text": " β"}],
+                "alpha β",
+            ),
+            ("null content", None, ""),
+        ]
+        for label, content, expected in cases:
+            with self.subTest(label=label):
+                response = model._parse_response(
+                    {"choices": [{"message": {"content": content}}]},
+                    messages=self.messages,
+                    request_id=None,
+                    latency_seconds=0.0,
+                    attempt_count=1,
+                )
+                self.assertEqual(response.content, expected)
+                self.assertEqual(response.usage.source, "estimated_char4")
+
+    def test_malformed_response_shapes_are_rejected(self) -> None:
+        model = OpenAICompatibleModel(_config(), Char4TokenCounter())
+        cases = [
+            ("missing choices", {}, "no valid choices[0]"),
+            ("choices object", {"choices": {}}, "no valid choices[0]"),
+            ("empty choices", {"choices": []}, "no valid choices[0]"),
+            ("non-object choice", {"choices": ["bad"]}, "no valid choices[0]"),
+            ("missing message", {"choices": [{}]}, "no message object"),
+            ("non-object message", {"choices": [{"message": []}]}, "no message object"),
+            (
+                "prompt token details",
+                {
+                    "choices": [{"message": {"content": "ok"}}],
+                    "usage": {
+                        "prompt_tokens": 1,
+                        "completion_tokens": 1,
+                        "prompt_tokens_details": ["bad"],
+                    },
+                },
+                "token detail fields must be JSON objects",
+            ),
+            (
+                "completion token details",
+                {
+                    "choices": [{"message": {"content": "ok"}}],
+                    "usage": {
+                        "prompt_tokens": 1,
+                        "completion_tokens": 1,
+                        "completion_tokens_details": ["bad"],
+                    },
+                },
+                "token detail fields must be JSON objects",
+            ),
+        ]
+        for label, payload, message in cases:
+            with (
+                self.subTest(label=label),
+                self.assertRaisesRegex(
+                    ModelError,
+                    re.escape(message),
+                ),
+            ):
+                model._parse_response(
+                    payload,
+                    messages=self.messages,
+                    request_id=None,
+                    latency_seconds=0.0,
+                    attempt_count=1,
+                )
+
+    def test_cache_token_totals_above_prompt_are_rejected(self) -> None:
+        model = OpenAICompatibleModel(_config(), Char4TokenCounter())
+        cases = [
+            (
+                "OpenAI detail fields",
+                {
+                    "prompt_tokens_details": {
+                        "cached_tokens": 2,
+                        "cache_write_tokens": 2,
+                    }
+                },
+            ),
+            (
+                "compatible top-level fields",
+                {"cache_read_input_tokens": 2, "cache_creation_input_tokens": 2},
+            ),
+        ]
+        for label, usage_fields in cases:
+            with (
+                self.subTest(label=label),
+                self.assertRaisesRegex(
+                    ModelError,
+                    "cache token counts exceed prompt_tokens",
+                ),
+            ):
+                model._parse_response(
+                    {
+                        "choices": [{"message": {"content": "ok"}}],
+                        "usage": {
+                            "prompt_tokens": 3,
+                            "completion_tokens": 1,
+                            **usage_fields,
+                        },
+                    },
+                    messages=self.messages,
+                    request_id=None,
+                    latency_seconds=0.0,
+                    attempt_count=1,
+                )
 
     def test_missing_usage_is_labeled_as_an_estimate(self) -> None:
         model = OpenAICompatibleModel(

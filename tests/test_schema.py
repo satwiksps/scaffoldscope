@@ -124,6 +124,51 @@ class ConfigTests(unittest.TestCase):
                 with self.assertRaises(ConfigError):
                     RunConfig.load(config_path)
 
+    def test_builtin_policies_reject_fields_they_do_not_use(self) -> None:
+        cases = (
+            (0, "trigger_ratio", 0.8),
+            (1, "every_turns", 2),
+            (2, "trigger_ratio", 0.8),
+            (3, "every_turns", 2),
+        )
+        for variant_index, field, value in cases:
+            with (
+                self.subTest(variant_index=variant_index, field=field),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                project = Path(temporary) / "demo"
+                shutil.copytree(DEMO_CONFIG.parent, project)
+                config_path = project / "experiment.json"
+                raw = json.loads(config_path.read_text(encoding="utf-8"))
+                raw["variants"][variant_index][field] = value
+                config_path.write_text(json.dumps(raw), encoding="utf-8")
+
+                with self.assertRaisesRegex(ConfigError, "does not use"):
+                    RunConfig.load(config_path)
+
+    def test_scripted_provider_rejects_openai_request_fields(self) -> None:
+        cases = {
+            "base_url": "https://provider.invalid/v1",
+            "api_key_env": "SCAFFOLDSCOPE_TEST_KEY",
+            "requires_api_key": False,
+            "timeout_seconds": 10,
+            "retries": 1,
+            "json_mode": True,
+            "temperature": 0.5,
+            "supports_seed": True,
+        }
+        for field, value in cases.items():
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                project = Path(temporary) / "demo"
+                shutil.copytree(DEMO_CONFIG.parent, project)
+                config_path = project / "experiment.json"
+                raw = json.loads(config_path.read_text(encoding="utf-8"))
+                raw["model"][field] = value
+                config_path.write_text(json.dumps(raw), encoding="utf-8")
+
+                with self.assertRaisesRegex(ConfigError, "does not use"):
+                    RunConfig.load(config_path)
+
     def test_docker_backend_requires_a_digest_pinned_image(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary) / "demo"

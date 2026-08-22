@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import os
 import shutil
@@ -15,7 +16,7 @@ from typing import Any
 from scaffoldscope import __version__
 from scaffoldscope.bundle import create_evidence_bundle, verify_evidence_bundle
 from scaffoldscope.docker_sandbox import docker_preflight
-from scaffoldscope.errors import ScaffoldScopeError
+from scaffoldscope.errors import ConfigError, ScaffoldScopeError
 from scaffoldscope.locking import experiment_lock
 from scaffoldscope.operations import budget_estimate, experiment_status, trial_inventory
 from scaffoldscope.plugins import BUILTIN_PLUGIN_NAMES, PluginKind, PluginRegistry
@@ -188,7 +189,9 @@ def _parser() -> argparse.ArgumentParser:
     ingest.add_argument("--evaluator-run-id", required=True)
     ingest.add_argument("--image-set-digest", required=True)
 
-    doctor = subparsers.add_parser("doctor", help="show local or experiment-specific readiness")
+    doctor = subparsers.add_parser(
+        "doctor", help="check local or experiment-specific prerequisites"
+    )
     doctor.add_argument("--config", type=Path, help="preflight one experiment without running it")
     return parser
 
@@ -208,6 +211,11 @@ def _run(args: argparse.Namespace, *, dry_run: bool) -> int:
         print(f"Review {summary.experiment_dir / 'plan.jsonl'} before spending model budget.")
         return 0
     with experiment_lock(summary.experiment_dir):
+        valid, issues = check_experiment(summary.experiment_dir)
+        if not valid:
+            raise ScaffoldScopeError(
+                "Final experiment integrity check failed: " + "; ".join(issues)
+            )
         report = write_report(summary.experiment_dir)
     print(
         f"Finished {summary.scheduled} trials: {summary.completed} executed, "
@@ -255,12 +263,12 @@ def _doctor(config_path: Path | None = None) -> int:
     capabilities = {
         "scaffoldscope": __version__,
         "python": sys.version.split()[0],
-        "python_supported": sys.version_info >= (3, 10),
+        "python_supported": (3, 10) <= sys.version_info < (3, 15),
         "git": shutil.which("git"),
         "docker": shutil.which("docker"),
         "runtime_dependencies": "none",
     }
-    ready = bool(capabilities["python_supported"])
+    preflight_passed = bool(capabilities["python_supported"])
     if config_path is not None:
         config = RunConfig.load(config_path)
         credential_status = "not-required"
@@ -269,7 +277,7 @@ def _doctor(config_path: Path | None = None) -> int:
                 credential_status = "configured"
             else:
                 credential_status = "missing"
-                ready = False
+                preflight_passed = False
         experiment: dict[str, Any] = {
             "name": config.experiment.name,
             "config_hash": config.config_hash,
@@ -278,6 +286,9 @@ def _doctor(config_path: Path | None = None) -> int:
             ),
             "provider": config.model.provider,
             "credential_status": credential_status,
+            "provider_connectivity": (
+                "not-applicable" if config.model.provider == "scripted" else "not-checked"
+            ),
             "sandbox_backend": config.sandbox.backend,
             "plugins": config.plugin_provenance,
         }
@@ -286,12 +297,12 @@ def _doctor(config_path: Path | None = None) -> int:
                 raise ScaffoldScopeError("Docker sandbox configuration is missing")
             experiment["docker_runtime"] = docker_preflight(config.docker)
         capabilities["experiment"] = experiment
-    capabilities["ready"] = ready
+    capabilities["preflight_passed"] = preflight_passed
     # Only literal status labels are rendered; regression coverage proves that neither the
     # credential nor its environment-variable name can reach this output sink.
     # codeql[py/clear-text-logging-sensitive-data]
     print(json.dumps(capabilities, indent=2))
-    return 0 if ready else 2
+    return 0 if preflight_passed else 2
 
 
 def _print_status(value: dict[str, Any]) -> None:
@@ -365,7 +376,15 @@ def _plugin_inventory(*, check: bool) -> list[dict[str, Any]]:
     return inventory
 
 
+def _require_experiment_directory(path: Path) -> None:
+    if not path.is_dir():
+        raise ConfigError(f"Experiment directory does not exist: {path}")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(errors="backslashreplace")
     parser = _parser()
     args = parser.parse_args(argv)
     try:
@@ -391,6 +410,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "run":
             return _run(args, dry_run=False)
         if args.command == "report":
+            _require_experiment_directory(args.experiment_dir)
             with experiment_lock(args.experiment_dir):
                 summary = write_report(
                     args.experiment_dir,
@@ -450,6 +470,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _print_budget(value)
             return 0
         if args.command == "check":
+            _require_experiment_directory(args.experiment_dir)
             with experiment_lock(args.experiment_dir):
                 valid, issues = check_experiment(args.experiment_dir)
                 if valid and args.strict:
@@ -469,11 +490,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "demo":
             return _demo(args)
         if args.command == "clean":
+            if not (args.experiment_dir / "manifest.json").is_file():
+                raise ConfigError(f"Not a ScaffoldScope experiment: {args.experiment_dir}")
             with experiment_lock(args.experiment_dir):
                 removed = clean_workspaces(args.experiment_dir)
             print(f"Removed {removed} generated workspace(s). Traces, patches, and results remain.")
             return 0
         if args.command == "bundle":
+            _require_experiment_directory(args.experiment_dir)
             with experiment_lock(args.experiment_dir):
                 manifest = create_evidence_bundle(args.experiment_dir, args.out)
             print(f"Wrote evidence bundle: {args.out.resolve()}")
@@ -529,6 +553,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Runbook: {args.out_dir.resolve() / 'evaluate.sh'}")
             return 0
         if args.command == "ingest-swebench":
+            _require_experiment_directory(args.experiment_dir)
             with experiment_lock(args.experiment_dir):
                 overlay = ingest_swebench_results(
                     args.experiment_dir,
@@ -555,4 +580,3 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("interrupted", file=sys.stderr)
         return 130
     parser.error(f"Unhandled command: {args.command}")
-    return 2

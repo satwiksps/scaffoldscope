@@ -37,12 +37,16 @@ class StatsTests(unittest.TestCase):
         )
 
     def test_sign_flip(self) -> None:
-        self.assertIsNotNone(paired_sign_flip_pvalue([1.0, 0.0, 1.0]))
+        self.assertEqual(paired_sign_flip_pvalue([1.0, 0.0, 1.0]), 0.5)
 
     def test_empirical_mde_is_suppressed_below_ten_tasks(self) -> None:
         self.assertIsNone(empirical_mde([0.0, 1.0] * 4 + [0.0]))
         self.assertIsNone(empirical_mde([1.0] * 10))
-        self.assertIsNotNone(empirical_mde([0.0, 1.0] * 5))
+        self.assertAlmostEqual(
+            empirical_mde([0.0, 1.0] * 5) or 0.0,
+            0.46693086968549463,
+            places=12,
+        )
 
     def test_prospective_mde_uses_declared_discordance(self) -> None:
         fifty_task_mde = prospective_paired_mde(50, anticipated_discordance=0.2)

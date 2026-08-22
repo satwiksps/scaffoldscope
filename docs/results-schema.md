@@ -11,8 +11,8 @@ are append-only within a protocol release.
 `summary.json` uses schema v2. It separates two validity populations:
 
 - Outcome fields such as solve rate, governed solve rate, behavioral adherence, and paired outcome
-  comparisons use analysis-valid episodes. This includes intention-to-treat harness failures as
-  solve failures; ordinary generated episodes require a completed evaluator outcome.
+  comparisons use analysis-valid episodes. Model and protocol-limit outcomes remain solve failures
+  when evaluation evidence exists; infrastructure and harness errors are invalid missing cells.
 - Resource, context, and provider-provenance fields use every infrastructure-valid generation,
   including episodes awaiting an external evaluator outcome. Strategy rows expose this denominator
   as `infrastructure_valid_attempts`; `valid_attempts` remains the analysis-valid outcome count.
@@ -125,7 +125,7 @@ The usage ledger includes a `complete` flag and source labels. A failed or retri
 - `awaiting_external_evaluation`
 - `external_evaluation_incomplete`
 
-Harness/policy exceptions are intent-to-treat failures (`harness_error`), so a broken variant cannot improve its score by excluding itself. Exogenous workspace/evaluator failures are infrastructure-invalid. Imported SWE-bench episodes remain pending until an immutable external-evaluation overlay is ingested. Model/provider incidents should be classified by a preregistered rule; never recode outcomes after seeing which strategy benefits.
+Harness/policy exceptions (`harness_error`) and exogenous workspace/evaluator failures are infrastructure-invalid missing cells. Preserve those rows and follow a preregistered incident policy rather than selectively deleting or recoding them. Imported SWE-bench episodes remain pending until an immutable external-evaluation overlay is ingested. Model/provider incidents should be classified by a preregistered rule; never recode outcomes after seeing which strategy benefits.
 
 ## Integrity check
 

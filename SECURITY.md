@@ -2,14 +2,13 @@
 
 ## Supported versions
 
-Security fixes are provided for the latest published minor release. Before the
-first stable release, users should upgrade to the newest `0.x` release rather
-than expecting backports.
+Security fixes are provided for the latest 1.x release. Version 0.x no longer
+receives fixes.
 
 | Version | Supported |
 |---|---|
-| 0.3.x | Yes |
-| Earlier or unreleased snapshots | No |
+| 1.x | Yes |
+| 0.x and unreleased snapshots | No |
 
 ## Report a vulnerability privately
 

@@ -61,6 +61,40 @@ class SchemaExportTests(unittest.TestCase):
             schema["$defs"]["variant"]["properties"]["instructions"]["type"],
             ["string", "null"],
         )
+        model_rule = schema["$defs"]["model"]["allOf"][0]
+        self.assertEqual(
+            model_rule["if"]["properties"]["provider"],
+            {"const": "scripted"},
+        )
+        self.assertEqual(model_rule["then"]["properties"]["temperature"], {"const": 0})
+        self.assertEqual(model_rule["then"]["properties"]["supports_seed"], {"const": False})
+        self.assertEqual(
+            {item["required"][0] for item in model_rule["then"]["not"]["anyOf"]},
+            {
+                "base_url",
+                "api_key_env",
+                "requires_api_key",
+                "timeout_seconds",
+                "retries",
+                "json_mode",
+            },
+        )
+        policy_rules = schema["$defs"]["variant"]["allOf"]
+        self.assertEqual(
+            [rule["if"]["properties"]["policy"]["const"] for rule in policy_rules],
+            ["none", "reactive", "periodic", "selective"],
+        )
+        self.assertEqual(
+            {item["required"][0] for item in policy_rules[0]["then"]["not"]["anyOf"]},
+            {
+                "trigger_ratio",
+                "target_ratio",
+                "every_turns",
+                "keep_recent_bundles",
+                "weights",
+                "plugin_options",
+            },
+        )
 
 
 if __name__ == "__main__":

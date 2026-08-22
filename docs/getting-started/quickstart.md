@@ -34,7 +34,7 @@ scaffoldscope doctor --config experiment.json
 scaffoldscope budget experiment.json
 ```
 
-These commands do not call a provider. `validate` resolves the task and source fingerprints. `doctor` checks environment readiness. `budget` shows the planned number of trials and declared upper bounds.
+These commands do not call a provider. `validate` resolves task and source fingerprints. `doctor` checks local prerequisites without probing a model endpoint. `budget` shows the planned trials and declared upper bounds.
 
 ## 3. Freeze the plan
 

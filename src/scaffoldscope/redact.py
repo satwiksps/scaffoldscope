@@ -6,10 +6,8 @@ import re
 from typing import Any
 
 _PATTERNS = [
-    # Do not require a word boundary before credential prefixes. Tool observations
-    # are embedded in JSON strings, where a preceding escaped newline ends in the
-    # word character ``n`` even though it is a semantic boundary.
-    re.compile(r"sk-[A-Za-z0-9_-]{16,}"),
+    # Escaped newlines are semantic token boundaries inside serialized observations.
+    re.compile(r"(?:(?<![A-Za-z0-9_-])|(?<=\\[nr]))sk-[A-Za-z0-9_-]{16,}"),
     re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}"),
     re.compile(r"AKIA[A-Z0-9]{16}"),
     re.compile(r"(?i)(api[_-]?key\s*[=:]\s*)[^\s,;\"']+"),

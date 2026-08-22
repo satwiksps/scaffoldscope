@@ -6,19 +6,39 @@ This file records user-visible changes to ScaffoldScope. The project follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-22
+
 ### Changed
 
-- The README and project website now use the published PyPI package in their
-  quickstart instructions.
-- Website copy and metadata are shorter. Social assets and Codecov reporting are
-  included.
-- The README now has clearer workflow guidance, artifact documentation, current
-  branch links, and focused project badges.
-- Repository maintenance adds an explicit Codecov policy and code ownership.
-- The Apache-2.0 license appendix uses the canonical upstream placeholder instead
-  of a stale project name.
-- Python source distributions exclude website files, repository workflows, and
-  promotional images that are not used by the installed package.
+- Harness and evaluator errors are infrastructure-invalid and excluded from solve
+  denominators. Model and protocol outcomes remain in intention-to-treat results.
+- Built-in policies and the scripted provider reject configuration fields they do
+  not use.
+- `doctor` reports `preflight_passed` and explicitly marks provider connectivity as
+  `not-checked`; it does not send a model request.
+- Python support is bounded to 3.10 through 3.14. CI covers every supported
+  Python/operating-system combination and runs a real Docker trial on Linux.
+- Configuration schema 1, evidence schema 2, and plugin API 1 are supported for
+  the 1.x release line.
+
+### Fixed
+
+- Model failures can no longer be recorded as solved, and final integrity checks
+  run before reports are written.
+- Malformed SWE-bench inputs, invalid manifests, missing checkouts, and unknown
+  trial filters now fail with actionable errors.
+- Evidence bundles are replaced atomically; failed writes do not leave partial
+  archives.
+- Trial workspaces and temporary homes are removed after execution. Missing-path
+  CLI failures no longer leave locks or marker files.
+- CLI output remains readable under restricted Windows encodings.
+
+### Migration
+
+- Consumers of `doctor` JSON must replace `ready` with `preflight_passed`.
+- Plugins compatible with core 1.x should declare an exclusive upper bound of
+  `2.0.0`. Plugin API version remains 1.
+- No configuration or evidence-schema migration is required.
 
 ## [0.3.1] - 2026-08-16
 
@@ -61,5 +81,6 @@ from the deleted predecessor repository.
 - Imported SWE-bench generations remain outcome-pending until official evaluator
   results are ingested.
 
-[Unreleased]: https://github.com/satwiksps/scaffoldscope/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/satwiksps/scaffoldscope/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/satwiksps/scaffoldscope/releases/tag/v1.0.0
 [0.3.1]: https://github.com/satwiksps/scaffoldscope/releases/tag/v0.3.1

@@ -7,7 +7,7 @@ name = "scaffoldscope-example-pinned-tail"
 version = "0.1.0"
 description = "Example third-party context policy for ScaffoldScope."
 requires-python = ">=3.10"
-dependencies = ["scaffoldscope>=0.2.0,<1.0.0"]
+dependencies = ["scaffoldscope>=0.2.0,<2.0.0"]
 
 [project.entry-points."scaffoldscope.context_policies"]
 "example.pinned-tail" = "scaffoldscope_example_pinned_tail:registration"

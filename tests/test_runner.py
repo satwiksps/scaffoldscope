@@ -5,13 +5,16 @@ import json
 import shutil
 import tempfile
 import threading
-import time
 import unittest
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
 
+from scaffoldscope.agent import AgentOutcome, UsageLedger
 from scaffoldscope.docker_sandbox import DockerSandboxConfig
 from scaffoldscope.errors import ConfigError
+from scaffoldscope.integrity import result_semantic_issues
 from scaffoldscope.jsonutil import (
     atomic_write_json,
     content_hash,
@@ -20,9 +23,10 @@ from scaffoldscope.jsonutil import (
     load_jsonl,
     write_jsonl,
 )
+from scaffoldscope.locking import experiment_lock
 from scaffoldscope.report import check_experiment, write_report
 from scaffoldscope.runner import clean_workspaces, run_experiment
-from scaffoldscope.sandbox import LocalSandbox
+from scaffoldscope.sandbox import EvaluationResult, LocalSandbox
 from scaffoldscope.schema import RunConfig, SandboxConfig, TaskSpec
 
 DEMO = Path(__file__).resolve().parents[1] / "src" / "scaffoldscope" / "demo"
@@ -43,6 +47,7 @@ class RunnerIntegrationTests(unittest.TestCase):
 
             tasks_path = project / "tasks.jsonl"
             task = load_jsonl(tasks_path)[0]
+            task["id"] = "messy-task-01"
             task["problem"] += f" Treat {fixture_marker} as inert fixture text."
             task["constraints"][0]["text"] = f"Never reveal fixture credential {fixture_marker}."
             task["script"][-1]["final"] = f"Completed without using {fixture_marker}."
@@ -111,6 +116,69 @@ class RunnerIntegrationTests(unittest.TestCase):
                 self.assertEqual(resumed.completed, 0)
                 self.assertEqual(resumed.skipped, 1)
                 self.assertEqual(prepare.call_count, 1)
+
+    def test_harness_error_is_excluded_from_evaluator_outcomes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "demo"
+            shutil.copytree(DEMO, project)
+            config_path = project / "experiment.json"
+            raw = json.loads(config_path.read_text(encoding="utf-8"))
+            raw["experiment"].update({"max_workers": 1, "primary_comparison": None})
+            raw["tasks"]["limit"] = 1
+            raw["variants"] = [raw["variants"][0]]
+            config_path.write_text(json.dumps(raw), encoding="utf-8")
+
+            with patch(
+                "scaffoldscope.runner.CodingAgent.run",
+                side_effect=RuntimeError("harness fixture failed"),
+            ):
+                summary = run_experiment(RunConfig.load(config_path))
+
+            row = load_jsonl(summary.experiment_dir / "episodes.jsonl")[0]
+            self.assertEqual(summary.failed, 1)
+            self.assertEqual(row["status"], "harness_error")
+            self.assertFalse(row["infrastructure_valid"])
+            self.assertFalse(row["evaluation_valid"])
+            self.assertIsNone(row["solved"])
+            self.assertIsNone(row["governed_solved"])
+            valid, issues = check_experiment(summary.experiment_dir)
+            self.assertTrue(valid, issues)
+
+    def test_model_error_cannot_become_a_solved_trial(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "demo"
+            shutil.copytree(DEMO, project)
+            config_path = project / "experiment.json"
+            raw = json.loads(config_path.read_text(encoding="utf-8"))
+            raw["experiment"].update({"max_workers": 1, "primary_comparison": None})
+            raw["tasks"]["limit"] = 1
+            raw["variants"] = [raw["variants"][0]]
+            config_path.write_text(json.dumps(raw), encoding="utf-8")
+            outcome = AgentOutcome(
+                "model_error",
+                None,
+                1,
+                0,
+                0,
+                0,
+                UsageLedger(),
+                0,
+                0,
+                error="provider failed",
+                model_trajectory_sha256=hashlib.sha256(b"").hexdigest(),
+            )
+            evaluation = EvaluationResult(True, 0, "passing fixture", 0.0, {}, {})
+
+            with (
+                patch("scaffoldscope.runner.CodingAgent.run", return_value=outcome),
+                patch("scaffoldscope.runner.LocalSandbox.evaluate", return_value=evaluation),
+            ):
+                summary = run_experiment(RunConfig.load(config_path))
+
+            row = load_jsonl(summary.experiment_dir / "episodes.jsonl")[0]
+            self.assertEqual(row["status"], "model_error")
+            self.assertFalse(row["solved"])
+            self.assertEqual(result_semantic_issues(row), [])
 
     def test_resume_reexecutes_results_with_tampered_identity_or_trace(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -237,6 +305,42 @@ class RunnerIntegrationTests(unittest.TestCase):
             resumed_without_trial_row = run_experiment(config)
             self.assertEqual(resumed_without_trial_row.completed, 0)
             self.assertEqual(resumed_without_trial_row.skipped, 1)
+
+    def test_resume_surfaces_unexpected_cache_loader_failures(self) -> None:
+        cases = (
+            ("scaffoldscope.runner.load_json", load_json, "result.json"),
+            ("scaffoldscope.runner.load_jsonl", load_jsonl, "events.jsonl"),
+        )
+        for patch_target, real_loader, failing_name in cases:
+            with self.subTest(loader=patch_target), tempfile.TemporaryDirectory() as temporary:
+                project = Path(temporary) / "demo"
+                shutil.copytree(DEMO, project)
+                config_path = project / "experiment.json"
+                raw = json.loads(config_path.read_text(encoding="utf-8"))
+                raw["experiment"].update({"max_workers": 1, "primary_comparison": None})
+                raw["tasks"]["limit"] = 1
+                raw["variants"] = [raw["variants"][0]]
+                config_path.write_text(json.dumps(raw), encoding="utf-8")
+                config = RunConfig.load(config_path)
+                run_experiment(config)
+                raised = False
+
+                def fail_once(
+                    path: Path,
+                    target_name: str = failing_name,
+                    loader: Callable[[Path], object] = real_loader,
+                ) -> object:
+                    nonlocal raised
+                    if path.name == target_name and not raised:
+                        raised = True
+                        raise RuntimeError("cache loader fixture failed")
+                    return loader(path)
+
+                with (
+                    patch(patch_target, side_effect=fail_once),
+                    self.assertRaisesRegex(RuntimeError, "cache loader fixture failed"),
+                ):
+                    run_experiment(config)
 
     def test_integrity_profile_requires_complete_manifest_identity(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -647,16 +751,19 @@ class RunnerIntegrationTests(unittest.TestCase):
             assert isinstance(contradictory_row, dict)
             assert isinstance(contradictory_trace, list)
             contradictory_evaluation = contradictory_row["evaluation"]
-            contradictory_evaluation["passed"] = not bool(contradictory_row["solved"])
-            evaluation_event = next(
-                event for event in contradictory_trace if event.get("type") == "evaluation_finished"
+            contradictory_agent = contradictory_row["agent"]
+            contradictory_row["solved"] = not bool(
+                contradictory_evaluation["passed"] and contradictory_agent["status"] == "completed"
             )
-            evaluation_event["payload"] = clone(contradictory_evaluation)
             install_evidence(contradictory_row, contradictory_trace)
             valid, issues = check_experiment(experiment)
             self.assertFalse(valid)
             self.assertTrue(
-                any("solved must agree with evaluation.passed" in issue for issue in issues)
+                any(
+                    "solved must agree with evaluation.passed and agent completion" in issue
+                    for issue in issues
+                ),
+                issues,
             )
 
             agent_tampered_row = clone(original_row)
@@ -1100,27 +1207,79 @@ class RunnerIntegrationTests(unittest.TestCase):
             config_path.write_text(json.dumps(raw), encoding="utf-8")
             config = RunConfig.load(config_path)
             running = threading.Event()
+            release_worker = threading.Event()
             finished = threading.Event()
+            shutdown_started = threading.Event()
+            run_finished = threading.Event()
+            run_errors: list[BaseException] = []
 
             def fail_or_finish(*args: object, **kwargs: object) -> list[object]:
                 del kwargs
                 trials = args[1]
                 assert isinstance(trials, list)
                 if trials[0].block_index == 0:
-                    self.assertTrue(running.wait(timeout=2))
+                    running.wait()
                     raise RuntimeError("injected block failure")
                 running.set()
-                time.sleep(0.2)
+                release_worker.wait()
                 finished.set()
                 return []
 
+            real_shutdown = ThreadPoolExecutor.shutdown
+
+            def observed_shutdown(
+                executor: ThreadPoolExecutor,
+                wait: bool = True,
+                *,
+                cancel_futures: bool = False,
+            ) -> None:
+                if wait:
+                    shutdown_started.set()
+                real_shutdown(executor, wait=wait, cancel_futures=cancel_futures)
+
+            def run_in_thread() -> None:
+                try:
+                    run_experiment(config)
+                except BaseException as exc:
+                    run_errors.append(exc)
+                finally:
+                    run_finished.set()
+
+            controller = threading.Thread(target=run_in_thread)
             with (
                 patch("scaffoldscope.runner._run_block", side_effect=fail_or_finish),
-                self.assertRaisesRegex(RuntimeError, "injected block failure"),
+                patch(
+                    "scaffoldscope.runner.ThreadPoolExecutor.shutdown",
+                    new=observed_shutdown,
+                ),
             ):
-                run_experiment(config)
+                controller.start()
+                try:
+                    self.assertTrue(running.wait(timeout=5), "parallel worker did not start")
+                    self.assertTrue(
+                        shutdown_started.wait(timeout=5),
+                        "runner did not begin blocking executor shutdown",
+                    )
+                    self.assertFalse(finished.is_set())
+                    self.assertFalse(run_finished.is_set())
+                    with (
+                        self.assertRaisesRegex(ConfigError, "already active"),
+                        experiment_lock(config.experiment_dir),
+                    ):
+                        pass
+                finally:
+                    running.set()
+                    release_worker.set()
+                    run_finished.wait(timeout=5)
+                    controller.join(timeout=5)
 
+            self.assertFalse(controller.is_alive())
+            self.assertEqual(len(run_errors), 1)
+            self.assertIsInstance(run_errors[0], RuntimeError)
+            self.assertEqual(str(run_errors[0]), "injected block failure")
             self.assertTrue(finished.is_set())
+            with experiment_lock(config.experiment_dir):
+                pass
 
     def test_offline_context_accounting_is_stable_across_fresh_runs(self) -> None:
         observed: list[dict[str, dict[str, object]]] = []
@@ -1212,11 +1371,19 @@ class RunnerIntegrationTests(unittest.TestCase):
             for attempt in (active, archived):
                 (attempt / "workspace").mkdir(parents=True)
                 (attempt / "workspace" / "source.py").write_text("x = 1\n", encoding="utf-8")
+                (attempt / "test-home").mkdir()
+                (attempt / "test-home" / "state").write_text("generated\n", encoding="utf-8")
+                (attempt / "test-temp").mkdir()
+                (attempt / "test-temp" / "state").write_text("generated\n", encoding="utf-8")
                 (attempt / "events.jsonl").write_text("{}\n", encoding="utf-8")
 
             self.assertEqual(clean_workspaces(experiment), 2)
             self.assertFalse((active / "workspace").exists())
             self.assertFalse((archived / "workspace").exists())
+            self.assertFalse((active / "test-home").exists())
+            self.assertFalse((active / "test-temp").exists())
+            self.assertFalse((archived / "test-home").exists())
+            self.assertFalse((archived / "test-temp").exists())
             self.assertTrue((active / "events.jsonl").is_file())
             self.assertTrue((archived / "events.jsonl").is_file())
 

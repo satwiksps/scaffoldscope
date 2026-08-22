@@ -67,25 +67,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            python: "3.10"
-          - os: ubuntu-latest
-            python: "3.11"
-          - os: ubuntu-latest
-            python: "3.12"
-          - os: ubuntu-latest
-            python: "3.13"
-          - os: ubuntu-latest
-            python: "3.14"
-          - os: windows-latest
-            python: "3.10"
-          - os: windows-latest
-            python: "3.14"
-          - os: macos-latest
-            python: "3.10"
-          - os: macos-latest
-            python: "3.14"
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -105,11 +88,37 @@ jobs:
         run: >-
           python -m pytest
           --cov=scaffoldscope
+          --cov-branch
           --cov-report=term-missing
           --cov-fail-under=80
       - name: Run tests
         if: matrix.os != 'ubuntu-latest' || matrix.python != '3.14'
         run: python -m pytest
+
+  docker-smoke:
+    name: Real Docker backend smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install project and test tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Run one trial through Docker
+        run: |
+          docker pull python:3.14-slim
+          export SCAFFOLDSCOPE_DOCKER_IMAGE="$(docker image inspect --format '{{.Id}}' python:3.14-slim)"
+          export SCAFFOLDSCOPE_DOCKER_USER="$(id -u):$(id -g)"
+          python -m pytest tests/integration_docker.py
 
   coverage:
     name: Upload coverage
@@ -136,6 +145,7 @@ jobs:
         run: >-
           python -m pytest
           --cov=scaffoldscope
+          --cov-branch
           --cov-report=xml:coverage.xml
           --cov-report=term-missing
           --cov-fail-under=80
@@ -199,7 +209,7 @@ jobs:
 
   package:
     name: Build and inspect distributions
-    needs: [quality, tests, site, docs]
+    needs: [quality, tests, docker-smoke, site, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

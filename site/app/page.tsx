@@ -66,7 +66,7 @@ const evidence = [
 ] as const;
 
 const guardrails = [
-  "Harness and protocol failures stay in the intention-to-treat denominator.",
+  "Model and protocol outcomes stay in the intention-to-treat denominator; harness errors do not.",
   "Provider-reported usage remains separate from local estimates.",
   "Task-level resampling preserves the paired study structure.",
   "Scripted, small, or incomplete panels stay descriptive.",
@@ -82,7 +82,7 @@ export default function Home() {
     license:
       siteConfig.repository + "/blob/v" + siteConfig.version + "/LICENSE",
     programmingLanguage: "Python",
-    runtimePlatform: "Python 3.10+",
+    runtimePlatform: "Python 3.10-3.14",
   };
 
   return (
@@ -188,7 +188,8 @@ export default function Home() {
                 <p className="mt-5 text-base leading-7 text-muted">
                   Start with four built-in context policies, then vary the tool
                   surface or treatment instructions. Versioned plugins can add
-                  policies and providers without escaping experiment identity.
+                  policies and providers; loaded Python implementations are
+                  fingerprinted in experiment identity.
                 </p>
                 <a
                   className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-mint hover:text-mint-soft"
@@ -279,7 +280,8 @@ export default function Home() {
                   Run the core local pipeline without an API key.
                 </h3>
                 <p className="mt-4 text-base leading-7 text-muted">
-                  The starter uses a deterministic scripted provider to validate
+                  After creating and activating a virtual environment, the
+                  starter uses a deterministic scripted provider to validate
                   planning, execution, traces, and reporting. It is a workflow
                   test, not a model benchmark.
                 </p>
@@ -416,15 +418,14 @@ export default function Home() {
               </a>
             </article>
             <article className="border-t border-line-strong pt-7 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
-              <SectionLabel>Project maturity</SectionLabel>
+              <SectionLabel>Release contract</SectionLabel>
               <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-ink">
-                ScaffoldScope is alpha.
+                Stable through the 1.x line.
               </h2>
               <p className="mt-5 text-base leading-7 text-muted">
-                Version {siteConfig.version} has a tested core evidence
-                contract, but it does not carry a 1.0 stability promise or an
-                adequately powered paid-model headline result. Use it to design
-                and audit experiments today.
+                Version {siteConfig.version} fixes configuration schema 1,
+                evidence schema 2, and plugin API 1. Study conclusions still
+                depend on the selected tasks, models, and protocol.
               </p>
               <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
                 <a

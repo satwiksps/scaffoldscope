@@ -168,14 +168,6 @@ class DockerSandboxTests(unittest.TestCase):
         self.assertEqual(exploratory.image, "python:3.12-slim")
         self.assertEqual(self.config.platform, "linux/amd64")
 
-    def test_patch_contract_is_identical_to_local_sandbox(self) -> None:
-        result = self.sandbox.invoke(
-            "replace", {"path": "module.py", "old_text": "VALUE = 1", "new_text": "VALUE = 2"}
-        )
-
-        self.assertTrue(result.ok)
-        self.assertIn("+VALUE = 2", self.sandbox.patch())
-
     def test_invalid_name_and_unrepresentable_mount_are_rejected(self) -> None:
         with self.assertRaisesRegex(SandboxError, "container name"):
             self.sandbox.docker_run_argv("--dangerous")

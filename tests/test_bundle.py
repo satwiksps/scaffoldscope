@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 from scaffoldscope.bundle import create_evidence_bundle, verify_evidence_bundle
 from scaffoldscope.errors import ConfigError
@@ -195,6 +196,37 @@ class BundleTests(unittest.TestCase):
 
             self.assertEqual(output.read_bytes(), b"existing archive")
             self.assertEqual((experiment / "report.md").read_bytes(), tampered)
+
+    def test_bundle_write_failure_leaves_no_partial_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            experiment = self._experiment(root)
+            output = root / "evidence.zip"
+            real_writestr = zipfile.ZipFile.writestr
+            calls = 0
+
+            def fail_second_write(
+                archive: zipfile.ZipFile,
+                member: object,
+                data: object,
+                *args: object,
+                **kwargs: object,
+            ) -> object:
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("archive write fixture failed")
+                return real_writestr(archive, member, data, *args, **kwargs)
+
+            with (
+                patch.object(zipfile.ZipFile, "writestr", new=fail_second_write),
+                self.assertRaisesRegex(OSError, "archive write fixture failed"),
+            ):
+                create_evidence_bundle(experiment, output)
+
+            self.assertFalse(output.exists())
+            create_evidence_bundle(experiment, output)
+            verify_evidence_bundle(output)
 
     def test_verify_rejects_an_identity_hash_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

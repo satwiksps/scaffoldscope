@@ -2,7 +2,7 @@
 
 ScaffoldScope runs controlled, paired experiments on coding-agent harnesses. It changes one declared scaffold treatment while holding the model, task, evaluator, budget, and replicate fixed.
 
-Use it to measure context policies, tool surfaces, or treatment instructions. Every run produces an inspectable plan, per-trial traces, patches, reports, and a deterministic evidence bundle.
+Use it to measure context policies, tool surfaces, or treatment instructions. A run produces an inspectable plan, per-trial traces, patches, and reports. The separate `bundle` command packages completed evidence into a deterministic archive.
 
 ::::{grid} 1 2 2 2
 :gutter: 3

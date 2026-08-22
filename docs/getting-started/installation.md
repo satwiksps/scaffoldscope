@@ -33,13 +33,13 @@ ScaffoldScope has no required third-party runtime dependencies. The wheel includ
 Pin a version in automated workers:
 
 ```bash
-python -m pip install "scaffoldscope==0.3.1"
+python -m pip install "scaffoldscope==1.0.0"
 ```
 
 For a stronger supply-chain policy, download the wheel from the [GitHub release](https://github.com/satwiksps/scaffoldscope/releases), verify it against `SHA256SUMS`, and install the local file:
 
 ```bash
-python -m pip install ./scaffoldscope-0.3.1-py3-none-any.whl
+python -m pip install ./scaffoldscope-1.0.0-py3-none-any.whl
 ```
 
 ## Install from source
@@ -49,6 +49,14 @@ Use an editable install only when developing ScaffoldScope or a plugin against t
 ```bash
 git clone https://github.com/satwiksps/scaffoldscope.git
 cd scaffoldscope
+python -m venv .venv
+```
+
+Activate the environment with `source .venv/bin/activate` on Linux or macOS, or
+`.\.venv\Scripts\Activate.ps1` in Windows PowerShell, then install:
+
+```bash
+python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
@@ -69,7 +77,7 @@ scaffoldscope --help
 scaffoldscope schema --out experiment.schema.json
 ```
 
-`doctor` without a config checks the installed package and local capabilities. `doctor --config experiment.json` additionally checks the selected provider, credential status, plugin compatibility, sandbox backend, and Docker image when applicable.
+`doctor` without a config checks the installed package and local prerequisites. `doctor --config experiment.json` additionally checks provider configuration, credential presence, plugin compatibility, the sandbox backend, and the Docker image when applicable. It does not contact a model endpoint; `provider_connectivity` is reported as `not-checked` for network providers.
 
 ## Upgrade or remove
 

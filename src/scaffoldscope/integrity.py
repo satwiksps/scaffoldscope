@@ -617,8 +617,10 @@ def result_semantic_issues(result: dict[str, Any]) -> list[str]:
 
     if isinstance(infrastructure_valid, bool) and isinstance(evaluation_valid, bool):
         if not infrastructure_valid:
-            if status != "infrastructure_error":
-                issues.append("infrastructure-invalid results must use infrastructure_error")
+            if status not in {"infrastructure_error", "harness_error"}:
+                issues.append(
+                    "infrastructure-invalid results must use infrastructure_error or harness_error"
+                )
             if evaluation_valid or solved is not None or governed_solved is not None:
                 issues.append("infrastructure-invalid results cannot carry an evaluator outcome")
         elif not evaluation_valid:
@@ -642,12 +644,15 @@ def result_semantic_issues(result: dict[str, Any]) -> list[str]:
         if isinstance(evaluation, dict):
             passed = evaluation.get("passed")
             adherence = evaluation.get("behavioral_adherence")
+            agent = result.get("agent")
+            agent_completed = isinstance(agent, dict) and agent.get("status") == "completed"
+            expected_solved = bool(passed and agent_completed) if isinstance(passed, bool) else None
             if isinstance(evaluation_valid, bool) and evaluation_valid != (passed is not None):
                 issues.append("evaluation_valid must agree with evaluation.passed availability")
-            if isinstance(passed, bool) and solved is not passed:
-                issues.append("solved must agree with evaluation.passed")
+            if isinstance(passed, bool) and solved is not expected_solved:
+                issues.append("solved must agree with evaluation.passed and agent completion")
             expected_governed = (
-                bool(passed and (adherence is None or adherence == 1.0))
+                bool(expected_solved and (adherence is None or adherence == 1.0))
                 if isinstance(passed, bool)
                 else None
             )

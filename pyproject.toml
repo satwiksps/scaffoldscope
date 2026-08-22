@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.27"]
+requires = ["hatchling==1.32.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -7,7 +7,7 @@ name = "scaffoldscope"
 dynamic = ["version"]
 description = "Reproducible, paired ablations for coding-agent harnesses."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.15"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [
@@ -27,7 +27,7 @@ keywords = [
   "reproducibility",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
@@ -48,17 +48,17 @@ Homepage = "https://scaffoldscope.vercel.app"
 Documentation = "https://scaffoldscope.readthedocs.io/"
 Repository = "https://github.com/satwiksps/scaffoldscope"
 Issues = "https://github.com/satwiksps/scaffoldscope/issues"
-Changelog = "https://github.com/satwiksps/scaffoldscope/blob/v0.3.1/CHANGELOG.md"
+Changelog = "https://github.com/satwiksps/scaffoldscope/blob/v1.0.0/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
-  "build>=1.2",
-  "mypy>=1.11",
-  "pre-commit>=4.0",
-  "pytest>=8.3",
-  "pytest-cov>=5.0",
-  "ruff>=0.7",
-  "twine>=6.1",
+  "build==1.5.0",
+  "mypy==2.3.1",
+  "pre-commit==4.6.1",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "ruff==0.16.3",
+  "twine==7.0.0",
 ]
 
 [project.scripts]

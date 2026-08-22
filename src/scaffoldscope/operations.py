@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from scaffoldscope.errors import ConfigError
+from scaffoldscope.integrity import PERSISTED_RESULT_STATUSES
 from scaffoldscope.jsonutil import load_json, load_jsonl
 from scaffoldscope.schema import RunConfig
 from scaffoldscope.stats import prospective_paired_mde
@@ -170,6 +171,15 @@ def trial_inventory(
     if not isinstance(manifest, dict):
         raise ConfigError("Experiment manifest must be a JSON object")
     plan = load_jsonl(root / "plan.jsonl")
+    allowed_filters = {
+        "status": set(PERSISTED_RESULT_STATUSES) | {"planned", "invalid_result"},
+        "variant": {value for row in plan if isinstance((value := row.get("variant_id")), str)},
+        "task": {value for row in plan if isinstance((value := row.get("task_id")), str)},
+    }
+    for name, selected in (("status", status), ("variant", variant), ("task", task)):
+        if selected is not None and selected not in allowed_filters[name]:
+            choices = ", ".join(sorted(allowed_filters[name])) or "none"
+            raise ConfigError(f"Unknown {name} filter {selected!r}; available values: {choices}")
     rows: list[dict[str, Any]] = []
     for trial in plan:
         trial_id = trial.get("trial_id")

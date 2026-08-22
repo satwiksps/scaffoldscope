@@ -88,7 +88,7 @@ def _context_registration(**overrides: Any) -> object:
         "plugin_version": "2.3.4",
         "description": "A deterministic test policy.",
         "minimum_core_version": "0.1.0",
-        "maximum_core_version_exclusive": "1.0.0",
+        "maximum_core_version_exclusive": "2.0.0",
     }
     values.update(overrides)
     return context_policy_plugin(**values)
@@ -369,7 +369,7 @@ class PluginRegistryTests(unittest.TestCase):
         )
         with self.assertRaises(PluginCompatibilityError) as core_error:
             PluginRegistry.discover(entry_points=[wrong_core]).load_context_policy("old.policy")
-        self.assertIn("not installed version 0.3.1", str(core_error.exception))
+        self.assertIn("not installed version 1.0.0", str(core_error.exception))
 
     def test_wrong_export_kind_and_missing_plugin_are_actionable(self) -> None:
         wrong_kind = _EntryPoint(

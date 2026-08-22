@@ -83,7 +83,7 @@ export default function OpenGraphImage() {
           }}
         >
           <span>Paired design. Complete traces. Verifiable evidence.</span>
-          <span>v{siteConfig.version} alpha</span>
+          <span>v{siteConfig.version}</span>
         </div>
       </div>
     ),

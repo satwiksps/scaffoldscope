@@ -26,7 +26,7 @@ Releases are research-instrument snapshots. A release includes source, wheel, so
    python -m mypy --platform linux
    python -m mypy --platform win32
    python -m mypy --platform darwin
-   python -m pytest --cov=scaffoldscope --cov-report=term-missing
+   python -m pytest --cov=scaffoldscope --cov-branch --cov-report=term-missing --cov-fail-under=80
    python -m build
    python -m twine check --strict dist/*
    python -m pip install -r docs/requirements.txt
