@@ -62,7 +62,7 @@ A task is governed-complete when the evaluator resolves it and all configured de
 
 ## Why are infrastructure and harness failures different?
 
-An exogenous evaluator or workspace failure can make an episode infrastructure-invalid. A treatment implementation failure is part of the treatment's observed behavior and stays as an intention-to-treat non-solve. The distinction prevents a broken variant from improving its score by excluding itself.
+An exogenous evaluator or workspace failure and a treatment implementation failure both make an episode infrastructure-invalid. Preserve either result as a missing cell and apply the incident policy declared before outcomes are viewed; do not selectively delete or recode failed rows.
 
 ## Can I run only one variant from a declared matrix?
 

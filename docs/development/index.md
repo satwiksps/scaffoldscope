@@ -8,10 +8,14 @@ ScaffoldScope is an Apache-2.0 open source project. Changes to its protocol, evi
 git clone https://github.com/satwiksps/scaffoldscope.git
 cd scaffoldscope
 python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 python -m pip install -r docs/requirements.txt
 pre-commit install
 ```
+
+In Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1` instead of the `source` command.
 
 Read [CONTRIBUTING.md](https://github.com/satwiksps/scaffoldscope/blob/main/CONTRIBUTING.md) before submitting a change. Protocol and persisted-evidence changes require an RFC issue before implementation.
 

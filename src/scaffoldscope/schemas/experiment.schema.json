@@ -66,6 +66,30 @@
         "cache_write_price_per_million": {"type": ["number", "null"], "minimum": 0},
         "plugin_options": {"type": "object"}
       },
+      "allOf": [
+        {
+          "if": {
+            "required": ["provider"],
+            "properties": {"provider": {"const": "scripted"}}
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {"required": ["base_url"]},
+                {"required": ["api_key_env"]},
+                {"required": ["requires_api_key"]},
+                {"required": ["timeout_seconds"]},
+                {"required": ["retries"]},
+                {"required": ["json_mode"]}
+              ]
+            },
+            "properties": {
+              "temperature": {"const": 0},
+              "supports_seed": {"const": false}
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "agent": {
@@ -160,6 +184,58 @@
         },
         "instructions": {"type": ["string", "null"], "minLength": 1}
       },
+      "allOf": [
+        {
+          "if": {"properties": {"policy": {"const": "none"}}},
+          "then": {
+            "not": {
+              "anyOf": [
+                {"required": ["trigger_ratio"]},
+                {"required": ["target_ratio"]},
+                {"required": ["every_turns"]},
+                {"required": ["keep_recent_bundles"]},
+                {"required": ["weights"]},
+                {"required": ["plugin_options"]}
+              ]
+            }
+          }
+        },
+        {
+          "if": {"properties": {"policy": {"const": "reactive"}}},
+          "then": {
+            "not": {
+              "anyOf": [
+                {"required": ["every_turns"]},
+                {"required": ["weights"]},
+                {"required": ["plugin_options"]}
+              ]
+            }
+          }
+        },
+        {
+          "if": {"properties": {"policy": {"const": "periodic"}}},
+          "then": {
+            "not": {
+              "anyOf": [
+                {"required": ["trigger_ratio"]},
+                {"required": ["weights"]},
+                {"required": ["plugin_options"]}
+              ]
+            }
+          }
+        },
+        {
+          "if": {"properties": {"policy": {"const": "selective"}}},
+          "then": {
+            "not": {
+              "anyOf": [
+                {"required": ["every_turns"]},
+                {"required": ["plugin_options"]}
+              ]
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     }
   },

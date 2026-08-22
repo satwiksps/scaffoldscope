@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from scaffoldscope.context import ContextBudget, Trajectory, make_policy
+from scaffoldscope.context import ContextBudget, MessageBundle, Trajectory, make_policy
 from scaffoldscope.errors import ContextOverflowError
 from scaffoldscope.schema import ConstraintSpec, VariantConfig
 from scaffoldscope.tokenization import Char4TokenCounter
@@ -46,6 +46,10 @@ class ContextPolicyTests(unittest.TestCase):
     def setUp(self) -> None:
         self.counter = Char4TokenCounter()
         self.constraint = ConstraintSpec("keep-canary", "Do not modify canary.txt.")
+
+    def test_message_bundle_rejects_empty_messages(self) -> None:
+        with self.assertRaisesRegex(ValueError, "messages must not be empty"):
+            MessageBundle("empty", ())
 
     def test_none_reports_overflow(self) -> None:
         policy = make_policy(VariantConfig("none", "none"), self.counter)

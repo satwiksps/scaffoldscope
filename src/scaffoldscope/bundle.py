@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import stat
 import tempfile
 import zipfile
+from contextlib import suppress
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -158,10 +160,23 @@ def create_evidence_bundle(experiment_dir: Path, output: Path) -> dict[str, Any]
     bundle_manifest = {**identity, "bundle_hash": content_hash(identity)}
     manifest_bytes = (canonical_json(bundle_manifest) + "\n").encode("utf-8")
     output.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        archive.writestr(_zip_info(_MANIFEST_NAME), manifest_bytes)
-        for name, data in sorted(payloads.items()):
-            archive.writestr(_zip_info(name), data)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{output.name}.", suffix=".tmp", dir=str(output.parent)
+    )
+    os.close(descriptor)
+    temporary_output = Path(temporary_name)
+    try:
+        with zipfile.ZipFile(
+            temporary_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+        ) as archive:
+            archive.writestr(_zip_info(_MANIFEST_NAME), manifest_bytes)
+            for name, data in sorted(payloads.items()):
+                archive.writestr(_zip_info(name), data)
+        os.replace(temporary_output, output)
+    except BaseException:
+        with suppress(OSError):
+            temporary_output.unlink()
+        raise
     return bundle_manifest
 
 

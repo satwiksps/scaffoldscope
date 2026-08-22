@@ -86,7 +86,15 @@ def import_swebench_manifest(source: Path, repo_cache: Path, output: Path) -> in
                 candidate.relative_to(cache_root)
             except ValueError as exc:
                 raise ConfigError(f"Repository path escapes repo cache: {repository}") from exc
-        workspace = nested if nested.is_dir() else flattened
+        if nested.is_dir():
+            workspace = nested
+        elif flattened.is_dir():
+            workspace = flattened
+        else:
+            raise ConfigError(
+                f"Repository cache has no checkout for {repository!r}; "
+                f"expected {nested} or {flattened}"
+            )
         rows.append(
             {
                 "id": instance_id,
@@ -376,6 +384,8 @@ def ingest_swebench_results(
 
     experiment_dir = experiment_dir.resolve()
     manifest = load_json(experiment_dir / "manifest.json")
+    if not isinstance(manifest, dict):
+        raise ConfigError("Experiment manifest must be a JSON object")
     if strategy not in manifest.get("variants", []):
         raise ConfigError(f"Strategy {strategy!r} is not in the experiment manifest")
     if replicate not in manifest.get("replicates", []):

@@ -1,5 +1,3 @@
-"""Experiment integrity checks and publication-ready reports."""
-
 from __future__ import annotations
 
 import csv

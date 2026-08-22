@@ -29,7 +29,7 @@ Each decision records message and bundle IDs, token estimates, constraint availa
 
 ScaffoldScope keeps three questions separate:
 
-1. **Did the task resolve?** Solve rate and paired outcome comparisons use analysis-valid episodes and retain declared harness or protocol failures as non-solves.
+1. **Did the task resolve?** Solve rate and paired outcome comparisons use analysis-valid episodes. Declared model and protocol-limit outcomes remain non-solves when evaluation evidence exists; infrastructure and harness errors are invalid missing cells.
 2. **What resources did generation consume?** Token, cost, latency, provider, and context metrics use infrastructure-valid generation rows, even when an external evaluator is still pending.
 3. **Were standing constraints available and obeyed?** Lexical availability measures representation in the active context. Behavioral adherence comes from deterministic workspace checks. Governed completion requires both task resolution and configured constraint adherence.
 

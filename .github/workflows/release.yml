@@ -144,7 +144,13 @@ jobs:
           python -m mypy --platform linux
           python -m mypy --platform win32
           python -m mypy --platform darwin
-          python -m pytest --cov=scaffoldscope --cov-report=term-missing --cov-fail-under=70
+          python -m pytest --cov=scaffoldscope --cov-branch --cov-report=term-missing --cov-fail-under=80
+      - name: Run one trial through Docker
+        run: |
+          docker pull python:3.14-slim
+          export SCAFFOLDSCOPE_DOCKER_IMAGE="$(docker image inspect --format '{{.Id}}' python:3.14-slim)"
+          export SCAFFOLDSCOPE_DOCKER_USER="$(id -u):$(id -g)"
+          python -m pytest tests/integration_docker.py
       - name: Build wheel and source distribution
         run: python -m build
       - name: Validate distribution metadata
@@ -167,13 +173,13 @@ jobs:
           notes = changelog[body_start:body_end].strip()
           if not notes:
               raise SystemExit(f"CHANGELOG.md section {heading!r} is empty")
-          repository = "https://github.com/satwiksps/scaffoldscope"
           rendered = (
-              f"ScaffoldScope {__version__} is an immutable research-instrument snapshot.\n\n"
+              f"# ScaffoldScope {__version__}\n\n"
               f"{notes}\n\n"
-              f"Read the [documentation](https://scaffoldscope.readthedocs.io/), "
-              f"verify downloads with `SHA256SUMS`, and report vulnerabilities through "
-              f"[private vulnerability reporting]({repository}/security/advisories/new).\n"
+              "Verify downloads with `SHA256SUMS`. "
+              "Report vulnerabilities through "
+              "[private vulnerability reporting]"
+              "(https://github.com/satwiksps/scaffoldscope/security/advisories/new).\n"
           )
           notes_path = Path("release-notes/RELEASE_NOTES.md")
           notes_path.parent.mkdir(parents=True, exist_ok=True)

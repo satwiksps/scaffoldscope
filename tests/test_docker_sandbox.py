@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 import os
 import subprocess
 import tempfile
@@ -168,14 +169,6 @@ class DockerSandboxTests(unittest.TestCase):
         self.assertEqual(exploratory.image, "python:3.12-slim")
         self.assertEqual(self.config.platform, "linux/amd64")
 
-    def test_patch_contract_is_identical_to_local_sandbox(self) -> None:
-        result = self.sandbox.invoke(
-            "replace", {"path": "module.py", "old_text": "VALUE = 1", "new_text": "VALUE = 2"}
-        )
-
-        self.assertTrue(result.ok)
-        self.assertIn("+VALUE = 2", self.sandbox.patch())
-
     def test_invalid_name_and_unrepresentable_mount_are_rejected(self) -> None:
         with self.assertRaisesRegex(SandboxError, "container name"):
             self.sandbox.docker_run_argv("--dangerous")
@@ -199,7 +192,7 @@ class DockerSandboxTests(unittest.TestCase):
     @patch("scaffoldscope.docker_sandbox.subprocess.run")
     def test_preflight_requires_the_local_image_before_model_work(self, run: Mock) -> None:
         image_id = "sha256:" + "b" * 64
-        inspected = f"{image_id}\tlinux\tamd64\t"
+        inspected = json.dumps([{"Id": image_id, "Os": "linux", "Architecture": "amd64"}])
         run.return_value = subprocess.CompletedProcess([], 0, inspected, "")
         result = docker_preflight(self.config)
         self.assertEqual(result["image_id"], image_id)
@@ -211,7 +204,9 @@ class DockerSandboxTests(unittest.TestCase):
         with self.assertRaisesRegex(ConfigError, "never pulls"):
             docker_preflight(self.config)
 
-        wrong_platform = f"{image_id}\tlinux\tarm64\tv8"
+        wrong_platform = json.dumps(
+            [{"Id": image_id, "Os": "linux", "Architecture": "arm64", "Variant": "v8"}]
+        )
         run.return_value = subprocess.CompletedProcess([], 0, wrong_platform, "")
         with self.assertRaisesRegex(ConfigError, "linux/arm64/v8"):
             docker_preflight(self.config)

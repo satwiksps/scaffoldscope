@@ -434,7 +434,7 @@ def _existing_result(
         return None
     try:
         value = load_json(path)
-    except Exception:
+    except ConfigError:
         return None
     if not isinstance(value, dict):
         return None
@@ -524,7 +524,7 @@ def _existing_result(
             return None
     try:
         trace_rows = load_jsonl(trace_path)
-    except Exception:
+    except ConfigError:
         return None
     has_normal_patch_evidence = (
         "patch" in artifacts
@@ -637,6 +637,30 @@ def _run_trial(
     docker_image_platform = (
         docker_runtime.get("image_platform") if docker_runtime is not None else None
     )
+    result_base = {
+        **trial.to_dict(),
+        "scaffoldscope_version": __version__,
+        "experiment": config.experiment.name,
+        "config_hash": config.config_hash,
+        "implementation_hash": config.implementation_hash,
+        "task_source_hash": config.task_source_hashes[task.id],
+        "task_repository": task.repository,
+        "task_base_commit": task.base_commit,
+        "variant_policy": variant.policy,
+        "model_provider": config.model.provider,
+        "model_name": config.model.name,
+        "sandbox_backend": config.sandbox.backend,
+        "docker_image": config.docker.image if config.docker is not None else None,
+        "docker_image_id": docker_image_id,
+        "docker_image_platform": docker_image_platform,
+        "runtime_identity": runtime_identity,
+        "plugins": config.plugin_provenance,
+        "variant_instructions_sha256": (
+            content_hash(variant.instructions) if variant.instructions is not None else None
+        ),
+        "provider_seed_supported": config.model.supports_seed,
+        "started_at": started_at,
+    }
     try:
         prepare_workspace(task, workspace, recreate=True)
         sandbox = _make_workspace_sandbox(config, workspace, task, docker_runtime)
@@ -685,46 +709,29 @@ def _run_trial(
         )
         atomic_write_text(trial_dir / "patch.diff", patch)
         evaluation_valid = evaluation.passed is not None
-        solved: bool | None = evaluation.passed if evaluation_valid else None
+        solved: bool | None = (
+            bool(evaluation.passed and outcome.status == "completed") if evaluation_valid else None
+        )
         adherence = evaluation.behavioral_adherence
         governed_solved: bool | None = (
             bool(solved and (adherence is None or adherence == 1.0)) if evaluation_valid else None
         )
         if not evaluation_valid:
             status = "awaiting_external_evaluation"
+        elif outcome.status != "completed":
+            status = outcome.status
         elif solved:
             status = "resolved"
         else:
-            status = "unresolved" if outcome.status == "completed" else outcome.status
+            status = "unresolved"
         result = {
-            **trial.to_dict(),
-            "scaffoldscope_version": __version__,
-            "experiment": config.experiment.name,
-            "config_hash": config.config_hash,
-            "implementation_hash": config.implementation_hash,
-            "task_source_hash": config.task_source_hashes[task.id],
-            "task_repository": task.repository,
-            "task_base_commit": task.base_commit,
-            "variant_policy": variant.policy,
-            "model_provider": config.model.provider,
-            "model_name": config.model.name,
-            "sandbox_backend": config.sandbox.backend,
-            "docker_image": config.docker.image if config.docker is not None else None,
-            "docker_image_id": docker_image_id,
-            "docker_image_platform": docker_image_platform,
-            "runtime_identity": runtime_identity,
-            "plugins": config.plugin_provenance,
+            **result_base,
             "variant_tools": list(sandbox.available_tools),
-            "variant_instructions_sha256": (
-                content_hash(variant.instructions) if variant.instructions is not None else None
-            ),
-            "provider_seed_supported": config.model.supports_seed,
             "status": status,
             "infrastructure_valid": True,
             "evaluation_valid": evaluation_valid,
             "solved": solved,
             "governed_solved": governed_solved,
-            "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "wall_seconds": time.perf_counter() - started_wall,
             "agent": outcome_payload,
@@ -744,34 +751,13 @@ def _run_trial(
             redact({"type": type(exc).__name__, "message": str(exc)}),
         )
         result = {
-            **trial.to_dict(),
-            "scaffoldscope_version": __version__,
-            "experiment": config.experiment.name,
-            "config_hash": config.config_hash,
-            "implementation_hash": config.implementation_hash,
-            "task_source_hash": config.task_source_hashes[task.id],
-            "task_repository": task.repository,
-            "task_base_commit": task.base_commit,
-            "variant_policy": variant.policy,
-            "model_provider": config.model.provider,
-            "model_name": config.model.name,
-            "sandbox_backend": config.sandbox.backend,
-            "docker_image": config.docker.image if config.docker is not None else None,
-            "docker_image_id": docker_image_id,
-            "docker_image_platform": docker_image_platform,
-            "runtime_identity": runtime_identity,
-            "plugins": config.plugin_provenance,
+            **result_base,
             "variant_tools": list(declared_tools),
-            "variant_instructions_sha256": (
-                content_hash(variant.instructions) if variant.instructions is not None else None
-            ),
-            "provider_seed_supported": config.model.supports_seed,
             "status": "infrastructure_error",
             "infrastructure_valid": False,
             "evaluation_valid": False,
             "solved": None,
             "governed_solved": None,
-            "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "wall_seconds": time.perf_counter() - started_wall,
             "error": error_payload,
@@ -794,34 +780,13 @@ def _run_trial(
             redact({"type": type(exc).__name__, "message": str(exc)}),
         )
         result = {
-            **trial.to_dict(),
-            "scaffoldscope_version": __version__,
-            "experiment": config.experiment.name,
-            "config_hash": config.config_hash,
-            "implementation_hash": config.implementation_hash,
-            "task_source_hash": config.task_source_hashes[task.id],
-            "task_repository": task.repository,
-            "task_base_commit": task.base_commit,
-            "variant_policy": variant.policy,
-            "model_provider": config.model.provider,
-            "model_name": config.model.name,
-            "sandbox_backend": config.sandbox.backend,
-            "docker_image": config.docker.image if config.docker is not None else None,
-            "docker_image_id": docker_image_id,
-            "docker_image_platform": docker_image_platform,
-            "runtime_identity": runtime_identity,
-            "plugins": config.plugin_provenance,
+            **result_base,
             "variant_tools": list(declared_tools),
-            "variant_instructions_sha256": (
-                content_hash(variant.instructions) if variant.instructions is not None else None
-            ),
-            "provider_seed_supported": config.model.supports_seed,
             "status": "harness_error",
-            "infrastructure_valid": True,
-            "evaluation_valid": True,
-            "solved": False,
-            "governed_solved": False,
-            "started_at": started_at,
+            "infrastructure_valid": False,
+            "evaluation_valid": False,
+            "solved": None,
+            "governed_solved": None,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "wall_seconds": time.perf_counter() - started_wall,
             "error": error_payload,
@@ -1032,12 +997,14 @@ def clean_workspaces(experiment_dir: Path) -> int:
             resolved_attempt = attempt_dir.resolve()
             if resolved_attempt.parent != resolved_attempts_root:
                 continue
-            workspace = attempt_dir / "workspace"
-            if workspace.is_symlink() or not workspace.is_dir():
-                continue
-            resolved_workspace = workspace.resolve()
-            if resolved_workspace.parent != resolved_attempt:
-                continue
-            shutil.rmtree(workspace)
-            removed += 1
+            removed_attempt = False
+            for generated_name in ("workspace", "test-home", "test-temp"):
+                generated = attempt_dir / generated_name
+                if generated.is_symlink() or not generated.is_dir():
+                    continue
+                if generated.resolve().parent != resolved_attempt:
+                    continue
+                shutil.rmtree(generated)
+                removed_attempt = True
+            removed += int(removed_attempt)
     return removed

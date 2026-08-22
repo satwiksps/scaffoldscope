@@ -30,6 +30,25 @@ BUILTIN_TOOL_NAMES = (
     "write_file",
     "run_tests",
 )
+_BUILTIN_POLICY_FIELDS = {
+    "none": frozenset(),
+    "reactive": frozenset({"trigger_ratio", "target_ratio", "keep_recent_bundles"}),
+    "periodic": frozenset({"target_ratio", "every_turns", "keep_recent_bundles"}),
+    "selective": frozenset({"trigger_ratio", "target_ratio", "keep_recent_bundles", "weights"}),
+}
+_POLICY_CONFIGURATION_FIELDS = frozenset(
+    {
+        "trigger_ratio",
+        "target_ratio",
+        "every_turns",
+        "keep_recent_bundles",
+        "weights",
+        "plugin_options",
+    }
+)
+_SCRIPTED_UNSUPPORTED_FIELDS = frozenset(
+    {"base_url", "api_key_env", "requires_api_key", "timeout_seconds", "retries", "json_mode"}
+)
 _IGNORED_FINGERPRINT_PARTS = {
     ".git",
     "__pycache__",
@@ -404,6 +423,14 @@ class VariantConfig:
             f"variants[{index}]",
         )
         policy = _identifier(data.get("policy"), f"variants[{index}].policy")
+        if policy in _BUILTIN_POLICY_FIELDS:
+            unused = sorted(
+                (data.keys() & _POLICY_CONFIGURATION_FIELDS) - _BUILTIN_POLICY_FIELDS[policy]
+            )
+            if unused:
+                raise ConfigError(
+                    f"Built-in context policy {policy!r} does not use: {', '.join(unused)}"
+                )
         trigger = _ratio(data.get("trigger_ratio", 0.95), f"variants[{index}].trigger_ratio")
         target = _ratio(data.get("target_ratio", 0.65), f"variants[{index}].target_ratio")
         if target > trigger and policy != "periodic":
@@ -503,6 +530,12 @@ class ModelConfig:
             "model",
         )
         provider = _identifier(data.get("provider"), "model.provider")
+        if provider == "scripted":
+            unused = sorted(data.keys() & _SCRIPTED_UNSUPPORTED_FIELDS)
+            if unused:
+                raise ConfigError(
+                    f"Built-in model provider 'scripted' does not use: {', '.join(unused)}"
+                )
         base_url = data.get("base_url")
         if base_url is not None:
             base_url = _string(base_url, "model.base_url").rstrip("/")
@@ -538,6 +571,12 @@ class ModelConfig:
         output_price = data.get("output_price_per_million")
         cache_read_price = data.get("cache_read_price_per_million")
         cache_write_price = data.get("cache_write_price_per_million")
+        temperature = _nonnegative_number(data.get("temperature", 0.0), "model.temperature")
+        supports_seed = _boolean(data.get("supports_seed", False), "model.supports_seed")
+        if provider == "scripted" and temperature != 0.0:
+            raise ConfigError("Built-in model provider 'scripted' does not use temperature")
+        if provider == "scripted" and supports_seed:
+            raise ConfigError("Built-in model provider 'scripted' does not use provider seeds")
         return cls(
             provider=provider,
             name=_string(data.get("name"), "model.name"),
@@ -547,14 +586,14 @@ class ModelConfig:
             max_output_tokens=_positive_int(
                 data.get("max_output_tokens", 512), "model.max_output_tokens"
             ),
-            temperature=_nonnegative_number(data.get("temperature", 0.0), "model.temperature"),
+            temperature=temperature,
             base_url=base_url,
             api_key_env=api_key_env,
             timeout_seconds=_positive_number(
                 data.get("timeout_seconds", 120), "model.timeout_seconds"
             ),
             retries=_positive_int(data.get("retries", 2), "model.retries", minimum=0),
-            supports_seed=_boolean(data.get("supports_seed", False), "model.supports_seed"),
+            supports_seed=supports_seed,
             json_mode=_boolean(data.get("json_mode", False), "model.json_mode"),
             input_price_per_million=(
                 _nonnegative_number(input_price, "model.input_price_per_million")
@@ -912,10 +951,6 @@ class RunConfig:
         builtin_providers = BUILTIN_PLUGIN_NAMES[PluginKind.MODEL_PROVIDER]
         for variant in variants:
             if variant.policy in builtin_policies:
-                if variant.plugin_options:
-                    raise ConfigError(
-                        f"Built-in context policy {variant.policy!r} does not accept plugin_options"
-                    )
                 continue
             loaded = registry.load_context_policy(variant.policy)
             plugin_provenance[f"context_policy:{loaded.info.normalized_name}"] = loaded.provenance()

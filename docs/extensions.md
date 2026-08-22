@@ -36,7 +36,7 @@ policy_registration = context_policy_plugin(
     plugin_version="1.2.0",
     description="Keeps pinned bundles and a deterministic recency tail.",
     minimum_core_version="0.1.0",
-    maximum_core_version_exclusive="1.0.0",
+    maximum_core_version_exclusive="2.0.0",
 )
 ```
 

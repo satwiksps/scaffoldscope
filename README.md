@@ -13,7 +13,7 @@ Controlled experiments for coding-agent harnesses.
 [![Codecov](https://codecov.io/gh/satwiksps/scaffoldscope/graph/badge.svg?branch=main)](https://codecov.io/gh/satwiksps/scaffoldscope)
 [![Documentation](https://readthedocs.org/projects/scaffoldscope/badge/?version=latest)](https://scaffoldscope.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/scaffoldscope?logo=pypi&logoColor=white)](https://pypi.org/project/scaffoldscope/)
-[![Python 3.10+](https://img.shields.io/pypi/pyversions/scaffoldscope?logo=python&logoColor=white)](https://pypi.org/project/scaffoldscope/)
+[![Python 3.10-3.14](https://img.shields.io/pypi/pyversions/scaffoldscope?logo=python&logoColor=white)](https://pypi.org/project/scaffoldscope/)
 [![License Apache-2.0](https://img.shields.io/pypi/l/scaffoldscope)](https://github.com/satwiksps/scaffoldscope/blob/main/LICENSE)
 
 </div>
@@ -30,22 +30,54 @@ It combines a readable Python agent, a paired experiment runner, and an evidence
 
 ScaffoldScope supports Python 3.10 through 3.14 on Linux, macOS, and Windows. Docker is optional and only required for container-isolated evaluation.
 
-Install from PyPI:
+Create an isolated environment and install from PyPI.
+
+Linux and macOS:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install scaffoldscope
-scaffoldscope --version
 ```
 
-To work from source instead:
+Windows PowerShell:
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install scaffoldscope
+```
+
+To work from source instead, clone first and create the environment inside the checkout:
 
 ```bash
 git clone https://github.com/satwiksps/scaffoldscope.git
 cd scaffoldscope
+python -m venv .venv
+```
+
+Activate it with `source .venv/bin/activate` on Linux or macOS, or
+`.\.venv\Scripts\Activate.ps1` in Windows PowerShell, then install:
+
+```bash
 python -m pip install .
 ```
 
-Then run the zero-cost local starter:
+The fastest zero-cost useful run is the bundled demo:
+
+```bash
+scaffoldscope demo
+```
+
+Expected output, with the report path and experiment hash varying by checkout:
+
+```text
+Offline demo complete. This validates context pressure, compaction, patching, tests, traces, and reporting; it does not benchmark model intelligence.
+Report: <absolute-path>/scaffoldscope-demo/runs/offline-quickstart-<hash>/report.html
+Warnings: SCRIPTED_PROVIDER, LOW_TASK_COUNT, LOW_POWER
+```
+
+To generate a smaller editable starter project instead:
 
 ```bash
 scaffoldscope init my-study --name my-study
@@ -58,19 +90,13 @@ The generated project is safe to rerun and includes a tiny repository, fixed tes
 manifest, and three context treatments. Its deterministic scripted provider costs nothing and
 validates the core local workflow without pretending to measure model intelligence.
 
-For the larger built-in engine demonstration:
-
-```bash
-scaffoldscope demo
-```
-
 ### Choose a workflow
 
 | Goal | Start here |
 |---|---|
 | Learn the experiment format without API cost | `scaffoldscope init my-study --name my-study` |
 | Exercise the complete local engine | `scaffoldscope demo` |
-| Run a real OpenAI-compatible model | [Real models](#real-models) |
+| Call an OpenAI-compatible `/chat/completions` endpoint | [Real models](#real-models) |
 | Evaluate untrusted repository code | [Docker evaluation](#docker-evaluation) |
 | Compare treatments on SWE-bench | [SWE-bench](#swe-bench) |
 
@@ -79,13 +105,13 @@ scaffoldscope demo
 | Capability | What ScaffoldScope does |
 |---|---|
 | Paired design | Can deterministically randomize treatment order inside each task and replicate block |
-| Honest denominators | Keeps harness and protocol failures in intention-to-treat results while separating infrastructure-invalid trials |
+| Honest denominators | Keeps model and protocol outcomes in intention-to-treat results while separating infrastructure and harness errors |
 | Resume integrity | Hashes config, implementation, plugin code, task source, and runtime identity before reusing a trial |
 | Auditable context | Preserves the canonical trajectory; every derived view records retained and dropped source IDs |
 | Cost provenance | Separates provider usage from estimates, cache reads/writes, retries, and incomplete ledgers |
 | Governance metrics | Reports lexical constraint availability, behavioral checks, and governed solves separately |
 | Evidence portability | Produces reports, raw traces, patches, immutable evaluator overlays, and deterministic ZIP bundles |
-| Safe extension | Loads versioned entry-point plugins lazily and fingerprints their implementation |
+| Plugin provenance | Loads trusted in-process entry-point plugins lazily, checks compatibility, and fingerprints their implementation |
 
 The bundled scripted experiments are workflow tests only. ScaffoldScope withholds intervals for
 scripted runs and panels below 10 tasks. It labels a comparison inferentially ready only when it is
@@ -156,7 +182,6 @@ Every trial owns its workspace and artifacts. Parallel workers never append to a
 | `trials/<trial-id>/events.jsonl` | Ordered model, context, tool, evaluation, and lifecycle events |
 | `trials/<trial-id>/patch.diff` | Exact repository change produced by the trial |
 | `summary.json`, `report.md`, `report.html` | Machine-readable and human-readable analysis |
-| Evidence ZIP | Workspace-free archive with checksums and integrity metadata |
 
 ## Real models
 
@@ -239,7 +264,7 @@ scaffoldscope export-swebench-matrix runs/lite-ablation-abc12345 \
   --dataset-name SWE-bench/SWE-bench_Lite
 ```
 
-The matrix contains one prediction file and a unique evaluator run ID for every treatment and replicate cell, plus a pinned runbook and checksums. After official grading, attach each cell as an immutable overlay:
+The matrix contains one prediction file and a unique evaluator run ID for every treatment and replicate cell, plus a generated runbook and checksums. The runbook uses the evaluator installed in the execution environment; pin and record that environment separately. After official grading, attach each cell as an immutable overlay:
 
 ```bash
 scaffoldscope ingest-swebench runs/lite-ablation-abc12345 official-results.json \
@@ -251,6 +276,9 @@ scaffoldscope ingest-swebench runs/lite-ablation-abc12345 official-results.json 
 
 See the [SWE-bench workflow](https://scaffoldscope.readthedocs.io/en/latest/swebench.html) for cache hazards, evaluation commands, and interpretation limits.
 
+The generated `evaluate.sh` runbook requires a POSIX shell. On Windows, run it under
+WSL/Linux or invoke the equivalent official evaluator commands manually.
+
 ## Extensions
 
 Context policies and model providers use normal Python entry points:
@@ -261,6 +289,9 @@ scaffoldscope plugins --check
 ```
 
 Discovery is deterministic. Built-in names cannot be shadowed, compatibility ranges are checked, plugin options are passed through a typed request, and loaded implementation files are hashed into experiment identity. Start with the [extension contract](https://scaffoldscope.readthedocs.io/en/latest/extensions.html) and the [standalone example plugin](https://github.com/satwiksps/scaffoldscope/tree/main/examples/plugins/pinned-tail).
+
+Installing a plugin authorizes arbitrary Python code to run in the ScaffoldScope process. Pin and
+audit it as a trusted dependency; compatibility checks and fingerprints are not a sandbox.
 
 ## Reports and evidence
 
@@ -313,6 +344,6 @@ Read [CONTRIBUTING.md](https://github.com/satwiksps/scaffoldscope/blob/main/CONT
 
 ## Maturity, license, and citation
 
-ScaffoldScope 0.3 is an alpha research instrument with a tested core evidence contract. The scripted demo tests the workflow; it does not measure model performance.
+ScaffoldScope 1.0 freezes configuration schema 1, evidence schema 2, and plugin API 1 for the 1.x release line. The scripted demo tests the workflow; it does not measure model performance.
 
 Apache-2.0. See [LICENSE](https://github.com/satwiksps/scaffoldscope/blob/main/LICENSE) and [NOTICE](https://github.com/satwiksps/scaffoldscope/blob/main/NOTICE). If ScaffoldScope supports published work, cite the archived release via [CITATION.cff](https://github.com/satwiksps/scaffoldscope/blob/main/CITATION.cff) and include the config hash, evaluator revision, and evidence-bundle checksum.

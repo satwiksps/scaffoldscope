@@ -6,8 +6,8 @@ abstract: "A reproducible experiment harness for paired ablations of coding-agen
 authors:
   - family-names: "Sahoo"
     given-names: "Satwik Sai Prakash"
-version: "0.3.1"
-date-released: 2026-08-16
+version: "1.0.0"
+date-released: 2026-08-22
 license: Apache-2.0
 repository-code: "https://github.com/satwiksps/scaffoldscope"
 url: "https://scaffoldscope.vercel.app"

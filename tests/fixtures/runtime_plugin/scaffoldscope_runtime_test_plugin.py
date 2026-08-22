@@ -73,7 +73,7 @@ policy_registration = context_policy_plugin(
     plugin_version="1.0.0",
     description="Runtime integration-test context policy.",
     minimum_core_version="0.1.0",
-    maximum_core_version_exclusive="1.0.0",
+    maximum_core_version_exclusive="2.0.0",
 )
 
 provider_registration = model_provider_plugin(
@@ -81,7 +81,7 @@ provider_registration = model_provider_plugin(
     plugin_version="1.0.0",
     description="Runtime integration-test model provider.",
     minimum_core_version="0.1.0",
-    maximum_core_version_exclusive="1.0.0",
+    maximum_core_version_exclusive="2.0.0",
 )
 
 __all__ = [

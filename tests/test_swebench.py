@@ -6,15 +6,65 @@ import unittest
 from pathlib import Path
 
 from scaffoldscope.errors import ConfigError
-from scaffoldscope.jsonutil import load_jsonl
+from scaffoldscope.jsonutil import load_json, load_jsonl
 from scaffoldscope.swebench import (
     export_swebench_matrix,
     export_swebench_predictions,
     import_swebench_manifest,
+    ingest_swebench_results,
 )
 
 
 class SwebenchTests(unittest.TestCase):
+    @staticmethod
+    def _external_experiment(root: Path, *task_ids: str) -> Path:
+        experiment = root / "experiment"
+        experiment.mkdir()
+        (experiment / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "config_hash": "test-config-hash",
+                    "tasks": list(task_ids),
+                    "variants": ["selective"],
+                    "replicates": [17],
+                }
+            ),
+            encoding="utf-8",
+        )
+        (experiment / "episodes.jsonl").write_text(
+            "".join(
+                json.dumps(
+                    {
+                        "task_id": task_id,
+                        "variant_id": "selective",
+                        "replicate": 17,
+                    }
+                )
+                + "\n"
+                for task_id in task_ids
+            ),
+            encoding="utf-8",
+        )
+        return experiment
+
+    def test_ingest_rejects_non_object_experiment_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            experiment = root / "experiment"
+            experiment.mkdir()
+            (experiment / "manifest.json").write_text("[]", encoding="utf-8")
+
+            with self.assertRaisesRegex(ConfigError, "manifest must be a JSON object"):
+                ingest_swebench_results(
+                    experiment,
+                    root / "results.json",
+                    strategy="selective",
+                    replicate=17,
+                    evaluator_version="commit",
+                    evaluator_run_id="run",
+                    image_set_digest="0" * 64,
+                )
+
     def test_import_maps_official_fields(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -40,8 +90,93 @@ class SwebenchTests(unittest.TestCase):
             count = import_swebench_manifest(source, cache, output)
             self.assertEqual(count, 1)
             row = load_jsonl(output)[0]
-            self.assertEqual(row["id"], "owner__repo-1")
-            self.assertEqual(row["repository"], "owner/repo")
+            self.assertEqual(
+                row,
+                {
+                    "id": "owner__repo-1",
+                    "repository": "owner/repo",
+                    "workspace": str((cache / "owner__repo").resolve()),
+                    "base_commit": "abc123",
+                    "problem": "Fix it",
+                    "constraints": [],
+                    "test_command": [],
+                    "metadata": {
+                        "FAIL_TO_PASS": ["test_x"],
+                        "PASS_TO_PASS": [],
+                        "source": "swe-bench",
+                    },
+                },
+            )
+
+    def test_import_accepts_jsonl_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "swe.jsonl"
+            source.write_text(
+                json.dumps(
+                    {
+                        "instance_id": "owner__repo-2",
+                        "repo": "owner/repo",
+                        "base_commit": "def456",
+                        "problem_statement": "Fix the JSONL case",
+                        "FAIL_TO_PASS": ["test_jsonl"],
+                        "PASS_TO_PASS": ["test_existing"],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            cache = root / "repos"
+            (cache / "owner" / "repo").mkdir(parents=True)
+            output = root / "tasks.jsonl"
+
+            count = import_swebench_manifest(source, cache, output)
+
+            self.assertEqual(
+                (count, load_jsonl(output)),
+                (
+                    1,
+                    [
+                        {
+                            "id": "owner__repo-2",
+                            "repository": "owner/repo",
+                            "workspace": str((cache / "owner" / "repo").resolve()),
+                            "base_commit": "def456",
+                            "problem": "Fix the JSONL case",
+                            "constraints": [],
+                            "test_command": [],
+                            "metadata": {
+                                "FAIL_TO_PASS": ["test_jsonl"],
+                                "PASS_TO_PASS": ["test_existing"],
+                                "source": "swe-bench",
+                            },
+                        }
+                    ],
+                ),
+            )
+
+    def test_import_rejects_a_missing_repository_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "swe.json"
+            source.write_text(
+                json.dumps(
+                    [
+                        {
+                            "instance_id": "owner__repo-1",
+                            "repo": "owner/repo",
+                            "problem_statement": "Fix it",
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            output = root / "tasks.jsonl"
+
+            with self.assertRaisesRegex(ConfigError, "no checkout for 'owner/repo'"):
+                import_swebench_manifest(source, root / "repos", output)
+
+            self.assertFalse(output.exists())
 
     def test_export_requires_a_complete_cell_and_preserves_patches(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -73,6 +208,14 @@ class SwebenchTests(unittest.TestCase):
                 encoding="utf-8",
             )
             output = Path(temporary) / "predictions.jsonl"
+
+            with self.assertRaisesRegex(ConfigError, "outside the experiment directory"):
+                export_swebench_predictions(
+                    experiment,
+                    experiment / "predictions.jsonl",
+                    strategy="selective",
+                    replicate=17,
+                )
 
             count = export_swebench_predictions(
                 experiment,
@@ -113,6 +256,115 @@ class SwebenchTests(unittest.TestCase):
                     strategy="selective",
                     replicate=17,
                 )
+
+    def test_ingest_accepts_per_instance_jsonl_outcomes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            experiment = self._external_experiment(root, "task-a", "task-b")
+            results = root / "instance-results.jsonl"
+            results.write_text(
+                json.dumps({"instance_id": "task-a", "resolved": True})
+                + "\n"
+                + json.dumps({"instance_id": "task-b", "completed": False, "resolved": False})
+                + "\n",
+                encoding="utf-8",
+            )
+
+            overlay = ingest_swebench_results(
+                experiment,
+                results,
+                strategy="selective",
+                replicate=17,
+                evaluator_version="commit",
+                evaluator_run_id="run",
+                image_set_digest="0" * 64,
+            )
+
+            self.assertEqual(
+                load_json(overlay)["outcomes"],
+                {
+                    "task-a": {"completed": True, "resolved": True},
+                    "task-b": {"completed": False, "resolved": False},
+                },
+            )
+
+    def test_ingest_rejects_malformed_outcome_formats(self) -> None:
+        cases = (
+            (
+                "empty JSONL instance id",
+                "results.jsonl",
+                json.dumps({"instance_id": "", "completed": True, "resolved": True}) + "\n",
+                "non-empty instance_id",
+            ),
+            (
+                "duplicate JSONL instance id",
+                "results.jsonl",
+                json.dumps({"instance_id": "task-a", "completed": True, "resolved": True})
+                + "\n"
+                + json.dumps({"instance_id": "task-a", "completed": True, "resolved": False})
+                + "\n",
+                "Duplicate official evaluator outcome",
+            ),
+            (
+                "non-boolean JSONL outcome",
+                "results.jsonl",
+                json.dumps({"instance_id": "task-a", "completed": "yes", "resolved": False}) + "\n",
+                "boolean completed/resolved fields",
+            ),
+            (
+                "resolved incomplete JSONL outcome",
+                "results.jsonl",
+                json.dumps({"instance_id": "task-a", "completed": False, "resolved": True}) + "\n",
+                "cannot resolve an incomplete run",
+            ),
+            (
+                "non-object JSON document",
+                "results.json",
+                "[]",
+                "must be a JSON object or instance JSONL",
+            ),
+            (
+                "non-list aggregate bucket",
+                "results.json",
+                json.dumps({"resolved_ids": "task-a", "unresolved_ids": [], "incomplete_ids": []}),
+                "field resolved_ids must be a list",
+            ),
+            (
+                "duplicate aggregate outcome",
+                "results.json",
+                json.dumps(
+                    {
+                        "resolved_ids": ["task-a"],
+                        "unresolved_ids": ["task-a"],
+                        "incomplete_ids": [],
+                    }
+                ),
+                "Duplicate official evaluator outcome",
+            ),
+            (
+                "non-object mapped outcome",
+                "results.json",
+                json.dumps({"task-a": True}),
+                "Could not recognize SWE-bench results",
+            ),
+        )
+        for label, filename, content, message in cases:
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                experiment = self._external_experiment(root, "task-a")
+                results = root / filename
+                results.write_text(content, encoding="utf-8")
+
+                with self.assertRaisesRegex(ConfigError, message):
+                    ingest_swebench_results(
+                        experiment,
+                        results,
+                        strategy="selective",
+                        replicate=17,
+                        evaluator_version="commit",
+                        evaluator_run_id="run",
+                        image_set_digest="0" * 64,
+                    )
 
     def test_matrix_export_writes_every_cell_and_unique_run_ids(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -42,6 +42,10 @@ class MessageBundle:
     id: str
     messages: tuple[Message, ...]
 
+    def __post_init__(self) -> None:
+        if not self.messages:
+            raise ValueError("MessageBundle messages must not be empty")
+
     @property
     def pinned(self) -> bool:
         return any(message.pinned for message in self.messages)
@@ -155,6 +159,20 @@ class ContextView:
 
 def _flatten(bundles: Iterable[MessageBundle]) -> list[Message]:
     return [message for bundle in bundles for message in bundle.messages]
+
+
+def _partition_bundles(
+    bundles: Sequence[MessageBundle], keep_recent: int
+) -> tuple[set[str], list[MessageBundle], list[MessageBundle]]:
+    pinned = [bundle for bundle in bundles if bundle.pinned]
+    candidates = [bundle for bundle in bundles if not bundle.pinned]
+    recent = candidates[-keep_recent:] if keep_recent else []
+    mandatory_ids = {bundle.id for bundle in [*pinned, *recent]}
+    return (
+        mandatory_ids,
+        [bundle for bundle in bundles if bundle.id in mandatory_ids],
+        [bundle for bundle in bundles if bundle.id not in mandatory_ids],
+    )
 
 
 def _lexical_availability(
@@ -380,14 +398,9 @@ class SummarizingPolicy(ContextPolicy):
                 summary_source_ids=self._summary_source_ids,
                 tokens_before_override=active_tokens,
             )
-        pinned = [bundle for bundle in bundles if bundle.pinned]
-        recent_candidates = [bundle for bundle in bundles if not bundle.pinned]
-        recent = recent_candidates[-self.config.keep_recent_bundles :]
-        if self.config.keep_recent_bundles == 0:
-            recent = []
-        mandatory_ids = {bundle.id for bundle in [*pinned, *recent]}
-        mandatory = [bundle for bundle in bundles if bundle.id in mandatory_ids]
-        eligible = [bundle for bundle in bundles if bundle.id not in mandatory_ids]
+        _mandatory_ids, mandatory, eligible = _partition_bundles(
+            bundles, self.config.keep_recent_bundles
+        )
         covered_bundle_ids = {bundle.id for bundle in eligible}
         mandatory_messages = _flatten(mandatory)
         mandatory_tokens = self.counter.messages(
@@ -500,14 +513,9 @@ class SelectivePolicy(ContextPolicy):
                 constraints=constraints,
                 reason="below_trigger",
             )
-        pinned = [bundle for bundle in bundles if bundle.pinned]
-        candidates = [bundle for bundle in bundles if not bundle.pinned]
-        recent = candidates[-self.config.keep_recent_bundles :]
-        if self.config.keep_recent_bundles == 0:
-            recent = []
-        mandatory_ids = {bundle.id for bundle in [*pinned, *recent]}
-        mandatory = [bundle for bundle in bundles if bundle.id in mandatory_ids]
-        optional = [bundle for bundle in bundles if bundle.id not in mandatory_ids]
+        mandatory_ids, mandatory, optional = _partition_bundles(
+            bundles, self.config.keep_recent_bundles
+        )
         mandatory_messages = _flatten(mandatory)
         mandatory_tokens = self.counter.messages(
             message.model_dict() for message in mandatory_messages

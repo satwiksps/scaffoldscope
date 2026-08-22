@@ -47,7 +47,7 @@ Copy this file into a study directory before pilot results are inspected. Replac
 
 ## Incident and denominator rules
 
-- Harness/policy exceptions: `[normally intention-to-treat non-solves]`
+- Harness/policy exceptions: `[infrastructure-invalid missing-cell and rerun rule]`
 - Provider errors and retries: `[predeclared retry and missing-usage treatment]`
 - Infrastructure-invalid trials: `[classification and rerun rule before outcomes are viewed]`
 - Official evaluator incomplete/error outcomes: `[pending, not silently excluded or scored]`

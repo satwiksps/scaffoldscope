@@ -65,6 +65,9 @@ Common fields:
 | `cache_read_price_per_million`, `cache_write_price_per_million` | Optional cache-specific prices |
 | `plugin_options` | Provider-plugin settings; built-ins reject nonempty values |
 
+The scripted provider requires `temperature: 0` and `supports_seed: false`. It rejects network and
+request fields because it never sends provider requests.
+
 The OpenAI-compatible provider also accepts:
 
 - `base_url` (required), `timeout_seconds`, `retries`, and `json_mode`;
@@ -111,11 +114,17 @@ See [docker.md](docker.md) before running untrusted code.
 
 Every variant needs `id` and `policy`. A policy is one of `none`, `reactive`, `periodic`, `selective`, or an installed context-policy plugin.
 
-Context fields:
+Built-in policies accept only fields they use:
 
-- `trigger_ratio`, `target_ratio`, `every_turns`, and `keep_recent_bundles`;
-- `weights` with any of `recency`, `referenced`, `subgoal`, `constraint`, `task`, and `error`; and
-- `plugin_options` for a third-party policy. Built-ins reject nonempty plugin options.
+| Policy | Accepted context fields |
+|---|---|
+| `none` | none |
+| `reactive` | `trigger_ratio`, `target_ratio`, `keep_recent_bundles` |
+| `periodic` | `every_turns`, `target_ratio`, `keep_recent_bundles` |
+| `selective` | `trigger_ratio`, `target_ratio`, `keep_recent_bundles`, `weights` |
+
+`weights` accepts `recency`, `referenced`, `subgoal`, `constraint`, `task`, and `error`. Third-party
+policies receive their settings through `plugin_options` and may also use the common context fields.
 
 Other treatment axes:
 

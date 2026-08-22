@@ -30,7 +30,7 @@ If the module command works but the console command does not, activate the envir
 ### The installed version is not the expected version
 
 ```bash
-python -m pip install --upgrade "scaffoldscope==0.3.1"
+python -m pip install --upgrade "scaffoldscope==1.0.0"
 python -m scaffoldscope --version
 ```
 
@@ -159,7 +159,7 @@ Once the first trial starts, the manifest pins Python implementation/version, OS
 
 ### A trial is `harness_error`
 
-The treatment implementation failed. The result stays in the intention-to-treat denominator. Fixing the harness changes implementation identity and requires a fresh matrix. Do not delete the failed treatment rows.
+The treatment implementation failed, so the result is infrastructure-invalid and excluded from the solve denominator. Preserve the failed row as a missing cell. Fixing the harness changes implementation identity and requires a fresh matrix.
 
 ### A trial is `infrastructure_error`
 
