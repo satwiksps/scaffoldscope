@@ -1,4 +1,4 @@
-# ScaffoldScope
+<h1 align="center">ScaffoldScope</h1>
 
 <div align="center">
 
@@ -23,8 +23,6 @@ ScaffoldScope measures how coding-agent harness choices affect solve rate, token
 > Same model. Same tasks. Same budget. One scaffold mechanism changed.
 
 It combines a readable Python agent, a paired experiment runner, and an evidence pipeline. Use it to compare context policies, tool surfaces, and treatment instructions; evaluate locally or in a locked-down Docker backend; export a complete SWE-bench matrix; and publish deterministic evidence archives.
-
-![ScaffoldScope compares context policies under a fixed model and task set](https://raw.githubusercontent.com/satwiksps/scaffoldscope/main/docs/assets/github-social-preview.png)
 
 ## Quickstart
 
