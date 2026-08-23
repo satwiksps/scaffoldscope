@@ -105,9 +105,14 @@ html_theme_options = {
     },
     "features": [
         "content.action.edit",
+        "content.code.annotate",
         "content.code.copy",
+        "content.tabs.link",
         "navigation.sections",
         "navigation.expand",
+        "navigation.indexes",
+        "navigation.instant",
+        "navigation.instant.progress",
         "navigation.top",
         "navigation.footer",
         "search.highlight",
@@ -120,8 +125,8 @@ html_theme_options = {
         {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
-            "primary": "blue-grey",
-            "accent": "cyan",
+            "primary": "custom",
+            "accent": "custom",
             "toggle": {
                 "icon": "material/weather-sunny",
                 "name": "Use light mode",
@@ -130,8 +135,8 @@ html_theme_options = {
         {
             "media": "(prefers-color-scheme: light)",
             "scheme": "default",
-            "primary": "blue-grey",
-            "accent": "cyan",
+            "primary": "custom",
+            "accent": "custom",
             "toggle": {
                 "icon": "material/weather-night",
                 "name": "Use dark mode",

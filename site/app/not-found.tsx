@@ -8,7 +8,7 @@ export default function NotFound() {
       <SiteHeader />
       <main
         className="mx-auto flex min-h-[65vh] max-w-[1200px] items-center px-5 py-24 sm:px-6"
-        id="main-content"
+        id="main"
       >
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.15em] text-mint">

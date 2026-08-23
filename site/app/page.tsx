@@ -1,3 +1,4 @@
+import { CopyButton } from "@/components/copy-button";
 import { ProjectWindow } from "@/components/project-window";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -72,6 +73,14 @@ const guardrails = [
   "Scripted, small, or incomplete panels stay descriptive.",
 ] as const;
 
+const quickstartCommand = [
+  "python -m pip install scaffoldscope",
+  "scaffoldscope init my-study --name my-study",
+  "scaffoldscope validate my-study/experiment.json",
+  "scaffoldscope budget my-study/experiment.json",
+  "scaffoldscope run my-study/experiment.json",
+].join("\n");
+
 export default function Home() {
   const structuredData = {
     "@context": "https://schema.org",
@@ -86,53 +95,78 @@ export default function Home() {
   };
 
   return (
-    <>
+    <div className="min-h-screen overflow-x-hidden bg-[#09090b] text-zinc-100">
       <SiteHeader />
-      <main id="main-content">
-        <section
-          className="border-b border-line pb-20 pt-16 sm:pb-24 sm:pt-20 lg:pb-28 lg:pt-24"
-          id="overview"
-        >
-          <div className="mx-auto grid max-w-[1200px] items-center gap-14 px-5 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:gap-16">
-            <div>
-              <p className="font-mono text-xs font-medium uppercase tracking-[0.16em] text-mint">
+      <main id="main">
+        <section className="relative" id="top">
+          <div
+            aria-hidden="true"
+            className="hero-grid absolute inset-x-0 top-0 h-[720px] opacity-60"
+          />
+          <div className="relative mx-auto max-w-7xl px-5 pb-16 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pb-20 lg:pt-32">
+            <div className="mx-auto max-w-4xl text-center">
+              <p className="mb-5 font-mono text-xs font-medium uppercase tracking-[0.18em] text-blue-300">
                 Open-source evaluation tooling
               </p>
-              <h1 className="mt-6 max-w-2xl text-[2.8rem] font-semibold leading-[1.04] tracking-[-0.045em] text-ink sm:text-6xl lg:text-[4rem]">
-                Controlled experiments for coding-agent harnesses.
+              <h1 className="text-balance text-5xl font-semibold tracking-[-0.045em] text-white sm:text-6xl lg:text-[72px] lg:leading-[1.04]">
+                Measure the harness.
+                <span className="block text-zinc-400">Know what changed.</span>
               </h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-muted">
-                Hold the model, tasks, and budget constant while you compare one
-                context, tool, or instruction treatment at a time. Inspect every
-                trial and publish verifiable evidence.
+              <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-7 text-zinc-400 sm:text-lg sm:leading-8">
+                ScaffoldScope holds the model, tasks, evaluator, and budget fixed
+                while one declared context, tool, or instruction treatment changes.
+                Inspect every trial and publish verifiable evidence.
               </p>
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <a
-                  className="inline-flex min-h-12 items-center rounded-md bg-ink px-5 text-sm font-semibold text-canvas transition-colors hover:bg-mint-soft"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-md bg-white px-5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-zinc-200 sm:w-auto"
                   href="#quickstart"
                 >
                   Get started
                 </a>
                 <a
-                  className="inline-flex min-h-12 items-center rounded-md border border-line-strong bg-surface px-5 text-sm font-semibold text-ink transition-colors hover:border-muted"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-md border border-white/12 bg-white/[0.035] px-5 text-sm font-medium text-zinc-200 transition-colors hover:border-white/20 hover:bg-white/[0.07] sm:w-auto"
                   href={siteConfig.repository}
+                  rel="noreferrer"
+                  target="_blank"
                 >
-                  View on GitHub
+                  View source
                 </a>
               </div>
-              <p className="mt-8 font-mono text-[11px] leading-6 text-dim">
-                Python 3.10 through 3.14, Linux, macOS, Windows, Apache-2.0
+              <p className="mt-5 text-sm text-zinc-400">
+                Paired design. Complete traces. Verifiable evidence.
               </p>
             </div>
-            <ProjectWindow />
+
+            <div className="mt-14 scroll-mt-24 lg:mt-16" id="product">
+              <ProjectWindow />
+            </div>
+
+            <div className="grid gap-px border-x border-b border-white/[0.07] bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ["Paired", "same task and replicate"],
+                ["Auditable", "complete canonical traces"],
+                ["Portable", "local and Docker backends"],
+                ["Verifiable", "checksummed evidence"],
+              ].map(([label, detail]) => (
+                <div className="bg-[#0b0b0e] px-5 py-4" key={label}>
+                  <strong className="block text-xs font-medium text-zinc-200">
+                    {label}
+                  </strong>
+                  <span className="mt-1 block font-mono text-[10px] text-zinc-400">
+                    {detail}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         <section
-          className="scroll-mt-20 border-b border-line py-20 sm:py-24"
+          className="scroll-mt-24 border-y border-white/[0.07] bg-white/[0.012]"
           id="method"
         >
-          <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
+          <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
             <div className="grid gap-10 lg:grid-cols-2 lg:gap-20">
               <div>
                 <SectionLabel>Why controlled ablations</SectionLabel>
@@ -175,10 +209,10 @@ export default function Home() {
         </section>
 
         <section
-          className="scroll-mt-20 border-b border-line py-20 sm:py-24"
+          className="scroll-mt-24"
           id="treatments"
         >
-          <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
+          <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
             <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
               <div>
                 <SectionLabel>Treatment surface</SectionLabel>
@@ -249,10 +283,10 @@ export default function Home() {
         </section>
 
         <section
-          className="scroll-mt-20 border-b border-line py-20 sm:py-24"
+          className="scroll-mt-24 border-y border-white/[0.07] bg-white/[0.012]"
           id="workflow"
         >
-          <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
+          <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
             <SectionLabel>How it works</SectionLabel>
             <h2 className="mt-5 max-w-2xl text-3xl font-semibold tracking-[-0.03em] text-ink sm:text-4xl">
               Raw history and model context are separate.
@@ -300,27 +334,18 @@ export default function Home() {
                   </a>
                 </div>
               </div>
-              <div className="rounded-lg border border-line bg-surface p-5 sm:p-6">
-                <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-7 text-muted">
-                  <code>
-                    <span className="text-dim">$</span>{" "}
-                    <span className="text-ink">
-                      python -m pip install scaffoldscope
-                    </span>
-                    {"\n\n"}
-                    <span className="text-dim">$</span>{" "}
-                    <span className="text-mint">scaffoldscope init</span>{" "}
-                    my-study --name my-study{"\n"}
-                    <span className="text-dim">$</span>{" "}
-                    <span className="text-mint">scaffoldscope validate</span>{" "}
-                    my-study/experiment.json{"\n"}
-                    <span className="text-dim">$</span>{" "}
-                    <span className="text-mint">scaffoldscope budget</span>{" "}
-                    my-study/experiment.json{"\n"}
-                    <span className="text-dim">$</span>{" "}
-                    <span className="text-mint">scaffoldscope run</span>{" "}
-                    my-study/experiment.json
-                  </code>
+              <div className="overflow-hidden rounded-lg border border-white/[0.09] bg-[#0b0b0e]">
+                <div className="flex h-11 items-center justify-between border-b border-white/[0.07] px-4">
+                  <span className="font-mono text-[10px] text-zinc-400">
+                    terminal
+                  </span>
+                  <CopyButton
+                    label="Copy installation commands"
+                    value={quickstartCommand}
+                  />
+                </div>
+                <pre className="overflow-x-auto p-4 font-mono text-[11px] leading-6 text-zinc-300 sm:p-5 sm:text-xs">
+                  <code>{quickstartCommand}</code>
                 </pre>
               </div>
             </div>
@@ -328,10 +353,10 @@ export default function Home() {
         </section>
 
         <section
-          className="scroll-mt-20 border-b border-line py-20 sm:py-24"
+          className="scroll-mt-24"
           id="evidence"
         >
-          <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
+          <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
             <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
               <div>
                 <SectionLabel>Reports and guardrails</SectionLabel>
@@ -397,8 +422,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="border-b border-line py-20 sm:py-24">
-          <div className="mx-auto grid max-w-[1200px] gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:gap-20">
+        <section className="border-t border-white/[0.07]">
+          <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8 lg:py-28">
             <article>
               <SectionLabel>SWE-bench interoperability</SectionLabel>
               <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-ink">
@@ -446,7 +471,7 @@ export default function Home() {
         }}
         type="application/ld+json"
       />
-    </>
+    </div>
   );
 }
 

@@ -8,94 +8,133 @@ const artifacts = [
 
 export function ProjectWindow() {
   return (
-    <figure className="min-w-0">
-      <div className="overflow-hidden rounded-xl border border-line-strong bg-surface shadow-2xl shadow-black/30">
-        <div className="flex min-h-12 items-center justify-between border-b border-line px-4">
-          <span className="font-mono text-xs text-muted">
-            scaffoldscope | illustrative demo output
+    <figure className="overflow-hidden rounded-xl border border-white/10 bg-[#0c0c0f] shadow-[0_32px_100px_rgba(0,0,0,0.55)]">
+      <figcaption className="sr-only">
+        Illustrative ScaffoldScope offline experiment report
+      </figcaption>
+      <div className="flex h-12 items-center justify-between border-b border-white/[0.07] bg-[#111114] px-4 sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid size-6 shrink-0 place-items-center rounded border border-white/10 bg-white/[0.03] font-mono text-[9px] font-bold text-blue-300">
+            SS
           </span>
-          <span className="font-mono text-[11px] text-dim">run evidence</span>
+          <span className="truncate text-xs font-medium text-zinc-300">
+            Experiment report
+          </span>
+          <span className="hidden text-xs text-zinc-400 sm:inline">/</span>
+          <span className="hidden font-mono text-[11px] text-zinc-400 sm:inline">
+            runs/offline-quickstart-1b212f14
+          </span>
         </div>
-        <div className="grid min-w-0 lg:grid-cols-[1.35fr_0.8fr]">
-          <div className="min-w-0 border-b border-line p-5 lg:border-b-0 lg:border-r">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-dim">
-                  Experiment
-                </p>
-                <p className="mt-1 text-sm font-medium text-ink">
-                  offline-quickstart
-                </p>
-              </div>
-              <span className="rounded-full border border-mint/30 bg-mint/8 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-mint">
-                complete
+        <span className="flex shrink-0 items-center gap-2 font-mono text-[10px] text-emerald-300">
+          <i
+            aria-hidden="true"
+            className="size-1.5 rounded-full bg-emerald-400"
+          />
+          RUN COMPLETE
+        </span>
+      </div>
+
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3 sm:px-5">
+            <span className="font-mono text-[11px] text-zinc-400">
+              offline-quickstart
+            </span>
+            <span className="font-mono text-[10px] text-zinc-400">
+              illustrative demo output
+            </span>
+          </div>
+
+          <div className="grid gap-px border-b border-white/[0.07] bg-white/[0.07] sm:grid-cols-3">
+            <div className="bg-[#0b0b0e] px-5 py-5">
+              <strong className="block font-mono text-lg font-semibold text-zinc-100">
+                12 / 12
+              </strong>
+              <span className="mt-1 block text-[11px] text-zinc-400">
+                recorded trials
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
-              <div className="bg-elevated p-3">
-                <p className="font-mono text-lg font-semibold text-ink">12 / 12</p>
-                <p className="mt-1 text-[11px] text-dim">recorded trials</p>
-              </div>
-              <div className="bg-elevated p-3">
-                <p className="font-mono text-lg font-semibold text-ink">3 / 3</p>
-                <p className="mt-1 text-[11px] text-dim">paired blocks</p>
-              </div>
-              <div className="col-span-2 bg-elevated p-3 sm:col-span-1">
-                <p className="font-mono text-lg font-semibold text-ink">
-                  27,477
-                </p>
-                <p className="mt-1 text-[11px] text-dim">recorded tokens</p>
-              </div>
+            <div className="bg-[#0b0b0e] px-5 py-5">
+              <strong className="block font-mono text-lg font-semibold text-zinc-100">
+                3 / 3
+              </strong>
+              <span className="mt-1 block text-[11px] text-zinc-400">
+                paired blocks
+              </span>
             </div>
-            <div className="mt-5 rounded-lg border border-line bg-canvas p-4">
-              <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-6 text-muted">
-                <code>
-                  <span className="text-dim">$</span>{" "}
-                  <span className="text-ink">scaffoldscope status</span>{" "}
-                  runs/offline-quickstart-1b212f14{"\n"}
-                  Progress: <span className="text-mint">12 / 12 (100.0%)</span>;
-                  remaining: 0{"\n"}
-                  Paired blocks: <span className="text-mint">3 / 3 (100.0%)</span>
-                  {"\n"}
-                  Outcomes: context_overflow=3, resolved=9{"\n"}
-                  {"\n"}
-                  <span className="text-dim">$</span>{" "}
-                  <span className="text-ink">scaffoldscope check</span>{" "}
-                  runs/offline-quickstart-1b212f14{"\n"}
-                  <span className="text-mint">
-                    PASS: result bundle is complete and internally consistent.
-                  </span>
-                </code>
-              </pre>
+            <div className="bg-[#0b0b0e] px-5 py-5">
+              <strong className="block font-mono text-lg font-semibold text-zinc-100">
+                27,477
+              </strong>
+              <span className="mt-1 block text-[11px] text-zinc-400">
+                recorded tokens
+              </span>
             </div>
           </div>
-          <aside aria-label="Generated evidence files" className="p-5">
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-dim">
-              Evidence
+
+          <div className="overflow-x-auto px-4 py-5 font-mono text-[11px] leading-6 sm:px-5 sm:py-7 sm:text-xs">
+            <div className="flex min-w-[620px] gap-3">
+              <span className="select-none text-blue-300">$</span>
+              <code className="text-zinc-300">
+                scaffoldscope status runs/offline-quickstart-1b212f14
+              </code>
+            </div>
+            <div className="mt-3 min-w-[620px] space-y-1 text-zinc-400">
+              <p>
+                Progress: <span className="text-emerald-300">12 / 12 (100.0%)</span>;
+                remaining: 0
+              </p>
+              <p>
+                Paired blocks: <span className="text-emerald-300">3 / 3 (100.0%)</span>
+              </p>
+              <p>Outcomes: context_overflow=3, resolved=9</p>
+            </div>
+          </div>
+
+          <div className="border-t border-white/[0.07] bg-black/20 px-4 py-4 font-mono text-[11px] sm:px-5 sm:text-xs">
+            <div className="flex min-w-0 gap-3">
+              <span className="select-none text-blue-300">$</span>
+              <code className="truncate text-zinc-300">
+                scaffoldscope check runs/offline-quickstart-1b212f14
+              </code>
+            </div>
+            <p className="mt-2 text-emerald-300">
+              PASS: result bundle is complete and internally consistent.
             </p>
-            <ul className="mt-3 divide-y divide-line">
+          </div>
+        </div>
+
+        <aside className="border-t border-white/[0.07] bg-[#0a0a0d] lg:border-l lg:border-t-0">
+          <div className="flex h-12 items-center justify-between border-b border-white/[0.07] px-5">
+            <span className="text-xs font-medium text-zinc-300">
+              Generated evidence
+            </span>
+            <span className="grid size-5 place-items-center rounded bg-white/[0.06] font-mono text-[10px] text-zinc-400">
+              5
+            </span>
+          </div>
+          <div className="p-5">
+            <ul className="divide-y divide-white/[0.07]">
               {artifacts.map(([name, description]) => (
                 <li className="py-3 first:pt-1" key={name}>
-                  <p className="font-mono text-xs text-ink">{name}</p>
-                  <p className="mt-1 text-[11px] text-dim">{description}</p>
+                  <p className="font-mono text-xs text-zinc-200">{name}</p>
+                  <p className="mt-1 text-[11px] text-zinc-400">
+                    {description}
+                  </p>
                 </li>
               ))}
             </ul>
-            <div className="mt-4 border-t border-line pt-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-warning">
+            <div className="mt-4 border-l-2 border-amber-400/50 pl-3">
+              <p className="font-mono text-[9px] uppercase tracking-wider text-amber-300">
                 Study warnings
               </p>
-              <p className="mt-2 font-mono text-[11px] leading-5 text-muted">
+              <p className="mt-1.5 font-mono text-[10px] leading-5 text-zinc-400">
                 SCRIPTED_PROVIDER, LOW_TASK_COUNT, LOW_POWER
               </p>
             </div>
-          </aside>
-        </div>
+          </div>
+        </aside>
       </div>
-      <figcaption className="mt-3 text-xs leading-5 text-dim">
-        Illustrative snapshot of the bundled offline demo workflow; it is not a
-        benchmark result.
-      </figcaption>
     </figure>
   );
 }

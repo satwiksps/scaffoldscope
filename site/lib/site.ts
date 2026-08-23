@@ -47,6 +47,7 @@ export const siteConfig = {
   release,
   pypi: "https://pypi.org/project/scaffoldscope/",
   docs: {
+    root: documentation,
     architecture: documentation + "architecture.html",
     configuration: documentation + "configuration.html",
     experimentDesign: documentation + "experiment-design.html",
