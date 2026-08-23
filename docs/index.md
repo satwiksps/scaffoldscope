@@ -1,8 +1,8 @@
-# ScaffoldScope documentation
+# ScaffoldScope
 
-ScaffoldScope runs controlled, paired experiments on coding-agent harnesses. It changes one declared scaffold treatment while holding the model, task, evaluator, budget, and replicate fixed.
+ScaffoldScope is a command-line experiment runner for comparing coding-agent harnesses. A harness is the system around a model: its instructions, tools, context policy, retries, and execution limits.
 
-Use it to measure context policies, tool surfaces, or treatment instructions. A run produces an inspectable plan, per-trial traces, patches, and reports. The separate `bundle` command packages completed evidence into a deterministic archive.
+It runs paired trials that change one declared harness treatment while holding the model, task, evaluator, budget, and replicate fixed. A run produces an inspectable plan, per-trial traces, patches, and reports. The separate `bundle` command packages completed evidence into a deterministic archive.
 
 ::::{grid} 1 2 2 2
 :gutter: 3

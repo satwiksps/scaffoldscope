@@ -28,14 +28,57 @@ body {
   box-shadow: none;
 }
 
-.md-header__button.md-logo img {
-  width: 1.5rem;
-  height: 1.5rem;
+.md-header__button.md-logo {
+  width: auto;
+  margin-inline: 0;
+  padding-inline: 0.6rem 1rem;
+  color: var(--md-primary-bg-color);
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.md-nav__button.md-logo img {
-  width: 2rem;
-  height: 2rem;
+.md-header__button.md-logo svg {
+  display: none;
+}
+
+.md-header__button.md-logo::after {
+  content: "ScaffoldScope";
+}
+
+.md-nav--primary > .md-nav__title {
+  font-size: 0;
+}
+
+.md-nav--primary > .md-nav__title .md-nav__button.md-logo {
+  width: auto;
+  color: var(--md-default-fg-color);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.md-nav--primary > .md-nav__title .md-nav__button.md-logo svg {
+  display: none !important;
+}
+
+.md-nav--primary > .md-nav__title .md-nav__button.md-logo::after {
+  content: "ScaffoldScope";
+}
+
+.md-header__title {
+  display: none;
+}
+
+@media screen and (max-width: 59.984375em) {
+  .md-header__button.md-logo {
+    display: inline-flex;
+    padding-inline: 0.3rem 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  .md-header__button[for="__drawer"] {
+    order: -1;
+  }
 }
 
 .md-typeset h1,

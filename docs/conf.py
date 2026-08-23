@@ -88,7 +88,7 @@ site_url = (
 
 html_theme = "sphinx_immaterial"
 html_title = "ScaffoldScope"
-html_logo = "assets/scaffoldscope-mark.svg"
+html_logo = None
 html_favicon = "assets/scaffoldscope-mark.svg"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
