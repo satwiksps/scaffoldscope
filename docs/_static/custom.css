@@ -29,13 +29,9 @@ body {
 }
 
 .md-header__button.md-logo {
+  align-items: center;
+  display: inline-flex;
   width: auto;
-  margin-inline: 0;
-  padding-inline: 0.6rem 1rem;
-  color: var(--md-primary-bg-color);
-  font-size: 0.9rem;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .md-header__button.md-logo svg {
@@ -44,6 +40,9 @@ body {
 
 .md-header__button.md-logo::after {
   content: "ScaffoldScope";
+  font-size: 0.9rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .md-nav--primary > .md-nav__title {
@@ -65,20 +64,8 @@ body {
   content: "ScaffoldScope";
 }
 
-.md-header__title {
+.md-header__title .md-header__topic {
   display: none;
-}
-
-@media screen and (max-width: 59.984375em) {
-  .md-header__button.md-logo {
-    display: inline-flex;
-    padding-inline: 0.3rem 0.6rem;
-    font-size: 0.78rem;
-  }
-
-  .md-header__button[for="__drawer"] {
-    order: -1;
-  }
 }
 
 .md-typeset h1,
